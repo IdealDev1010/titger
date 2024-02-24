@@ -1,0 +1,84 @@
+.product-account {
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100%;
+    animation: sidenavRightOpen 0.3s;
+    padding-top: 61px;
+    width: 100%;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.customer {
+    max-width: 400px;
+    margin: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+    height: 100%;
+    width: 100%;
+    background: white;
+}
+
+.account-header {
+    align-items: center;
+    border-bottom: 1px solid #f6f6f6;
+    display: flex;
+    flex: 1;
+    font-weight: 600;
+    height: 3.6rem;
+    justify-content: space-between;
+    text-transform: uppercase;
+}
+
+.login-tabs {
+    margin: auto;
+    display: flex;
+
+}
+
+.login-tabs span {
+    flex-grow: 1;
+    width: 100%;
+    background-color: #fff;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 5px !important;
+    cursor: pointer;
+    font-family: Open Sans;
+    font-style: normal;
+    font-size: 12px;
+    line-height: 16px;
+    color: #425160;
+    font-weight: 700;
+    max-width: 100px;
+    border-radius: 5px;
+}
+.login__tabs span:hover {
+    background: #9FAEC1;
+    color: #fff;
+}
+
+.login-tabs span:first-of-type {
+    margin-right:20px;
+    border-right: 1px solid #fff;
+}
+
+.login-tabs span:last-of-type {
+    border-left: 1px solid #fff;
+}
+
+.login-tabs span.active-tab {
+    color: #fff;
+    background-color: #425160;
+}
+.account-content__header{
+    display: none;
+}
+
+.login-content .email-label {
+    color:#425160;
+    font-size: 12px;
+    text-align: left;
+}
