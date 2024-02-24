@@ -83,3 +83,21 @@ class CustomerAddresses {
     }
   };
 }
+
+document.querySelector(".register-btn").addEventListener("click", function(e) {
+  e.preventDefault();
+  // console.log('ddd');
+  document.querySelector(".product-account__register").style.display = 'block';
+  document.querySelector (".product-account__login").style.display = 'none';
+  document.querySelector(".register-btn").classList.add("active-tab");
+  document.querySelector(".login-btn").classList.remove("active-tab");
+                                                  
+});
+
+document.querySelector(".login-btn").addEventListener("click", function(e) {
+  e.preventDefault();
+  document.querySelector(".product-account__login").style.display = 'block';
+  document.querySelector(".product-account__register").style.display = 'none';
+  document.querySelector(".login-btn").classList.add("active-tab");
+  document.querySelector(".register-btn").classList.remove("active-tab");
+});

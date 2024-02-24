@@ -27,7 +27,6 @@
     display: flex;
     flex: 1;
     font-weight: 600;
-    height: 3.6rem;
     justify-content: space-between;
     text-transform: uppercase;
 }
@@ -35,10 +34,9 @@
 .login-tabs {
     margin: auto;
     display: flex;
-
 }
 
-.login-tabs span {
+.login-tabs a {
     flex-grow: 1;
     width: 100%;
     background-color: #fff;
@@ -55,21 +53,22 @@
     max-width: 100px;
     border-radius: 5px;
 }
-.login__tabs span:hover {
+.login__tabs a:hover {
     background: #9FAEC1;
     color: #fff;
 }
 
-.login-tabs span:first-of-type {
+.login-tabs a {
     margin-right:20px;
     border-right: 1px solid #fff;
+    text-decoration: none;
 }
 
-.login-tabs span:last-of-type {
+.login-tabs.register-btn {
     border-left: 1px solid #fff;
 }
 
-.login-tabs span.active-tab {
+.login-tabs .active-tab {
     color: #fff;
     background-color: #425160;
 }
@@ -81,4 +80,20 @@
     color:#425160;
     font-size: 12px;
     text-align: left;
+}
+
+.login-button {
+    transform: unset;
+    font-family: Open Sans;
+    font-style: normal;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 24px;
+    text-align: center;
+    display: block;
+
+}
+
+.product-account__register {
+    display: none;
 }
