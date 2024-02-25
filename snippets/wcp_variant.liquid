@@ -1,0 +1,91 @@
+{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+{% assign v_active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+{% assign v_active_discounts_array = v_active_discounts | split: ',' %}
+{%  assign active_discount_keys = null %}
+    {% for discount_key in v_active_discounts_array %}
+        {% assign key_split = discount_key | split: '-' %}
+        {% assign key_split_length = key_split | size %}
+        {% if key_split_length > 2 %}
+        {% assign p_value = key_split.last | plus: 0 %}
+        {% assign removeable_key = key_split.last | prepend: '-' %}
+        {% assign p_key = discount_key | remove_last: removeable_key %}
+        {% else %}
+        {% assign p_key = key_split[0] %} 
+        {% assign p_value = key_split[1] | plus: 0 %}
+        {% endif %}
+        {%  assign active_discount_keys = active_discount_keys | prepend:',' | prepend:p_key | downcase %}
+    {% endfor %}
+  {%  assign active_discount_keys = active_discount_keys | split:',' %}
+  {% assign wcp_v_compare_at_price = wcp_variant.compare_at_price %}
+  {% if wcp_v_compare_at_price == blank or wcp_v_compare_at_price == 0  or shop.metafields.wcp_net.DiscountPriceRule  == '1' %}
+    {% assign wcp_v_compare_at_price = wcp_variant.price %}
+  {% endif %}
+  {% assign  wcp_discount_value = wcp_discount_value | minus: 0 %}
+  {% assign wcp_v_price = wcp_v_compare_at_price | times: wcp_discount_value %}
+  {% if wcp_v_price > wcp_variant.price  %}
+    {% assign wcp_v_price = wcp_variant.price %}
+  {% endif %}
+  
+  {% assign customer_tags = blank %}
+  {% for tag in customer.tags %}
+    {% assign tempTag = tag | downcase %}
+    {% assign customer_tags = customer_tags | prepend:tempTag %}
+    {% unless forloop.last %}
+      {% assign customer_tags = customer_tags | prepend:','  %}
+    {% endunless %}
+  {% endfor %}
+  {% assign customer_tags = customer_tags | split:',' %}
+  
+  {% assign ivp_price = 99999999999999999999999999999 %}
+  {% if v_discount_tag %}
+    {% for sp in set_prices_array %}
+      {% assign sp_arr = sp | split: '--' %}
+      
+      {% assign sp_arr_length = sp_arr | size %}
+      {% if sp_arr_length > 2 %}
+        {% assign sp_tag_removable_key = sp_arr.last | prepend: '--' %}
+        {% assign sp_tag = sp | remove_last: sp_tag_removable_key %}
+      {% else %}
+       {% assign sp_tag = sp_arr | first %}      
+      {% endif %}
+
+      {% assign sp_tag = sp_tag | downcase %}        
+        {% if customer_tags contains sp_tag and active_discount_keys contains sp_tag  %}          
+          {% assign sp_var_arr = sp_arr | last | split: '^' %}
+          {% for value in sp_var_arr %}
+            {% assign val_split = value | split: '-' %}
+            {% assign variant_id = val_split | first | times: 1 %}
+            {% if variant_id == wcp_variant.id %}
+              {% assign meta_set_price = val_split | last |times: 1 %}
+              {% assign set_v_price = meta_set_price %}
+              {% if set_v_price and ivp_price > set_v_price %}
+                {% assign ivp_price =  set_v_price %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if ivp_price != 99999999999999999999999999999 %}
+    {% assign wcp_v_price = ivp_price %}
+  {% endif %}
+  {% if wcp_discount_value == 1 and set_v_price == null %}
+    {% assign wcp_v_compare_at_price = wcp_variant.compare_at_price %}
+    {% assign wcp_v_price = wcp_variant.price %}
+  {% endif %}
+  {% assign wcp_v_price = wcp_v_price | floor %}
+  {% if wcp_v_price > wcp_variant.price  %}
+    {% assign wcp_v_price = wcp_variant.price %}
+  {% endif %}
+  {% if wpd_is_render == 'yes' %}
+    {%- assign PriceVariables = wcp_v_price | append:"|" | append:wcp_v_compare_at_price  -%}
+    {{- PriceVariables -}}
+  {% endif %}
+{% else %}
+  {% assign wcp_v_compare_at_price = wcp_variant.compare_at_price %}
+  {% assign wcp_v_price = wcp_variant.price %}
+  {% if wpd_is_render == 'yes' %}
+    {%- assign PriceVariables = wcp_v_price | append:"|" | append:wcp_v_compare_at_price  -%}
+    {{- PriceVariables -}}
+  {% endif %}
+{% endif %}

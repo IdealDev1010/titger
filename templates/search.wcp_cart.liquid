@@ -1,0 +1,88 @@
+{% layout none %}
+{% capture output %}
+{% assign wcp_total = 0 %}
+{% assign wcp_tag = false %}
+{
+"token":{{cart |json}},
+"attributes":{{cart.attributes | json}},
+"item_count":{{cart.item_count}},
+"note":"{{cart.note}}",
+"original_total_price":{{cart.original_total_price}},
+"requires_shipping":{{cart.requires_shipping}},
+"total_discount":{{cart.total_discount}},
+"total_price":{{cart.total_price}},
+"total_weight":{{cart.total_weight}},
+"items" :[
+     
+    {% for item in cart.items %}              
+      {% include 'wcp_discount' with item.product , wpd_discount_variant:item.variant %}
+      {% include 'wcp_variant' with item.variant %}
+      {% if wcp_v_price > item.final_price %}   
+           {% assign wcp_v_price = item.final_price %}
+      {% endif %}
+
+      {% if wcp_v_price > item.discounted_price %}   
+           {% assign wcp_v_price = item.discounted_price %}
+      {% endif %}
+
+      {% if set_price or wcp_discount_value < 1 or p_discount_value == 0 %}
+      {% assign wcp_line_price = wcp_v_price | minus: 0 | times: item.quantity %}
+
+	  {% include 'wcp_vd_discount' with item %}
+
+	  {% if customer.tags contains p_discount_tag or customer.tags contains v_discount_tag %}
+		{% assign wcp_tag = true %}
+	  {% endif %}
+
+	  {% assign wcp_line_price = wcp_v_price | minus: 0 | times: item.quantity %}
+			{% assign wcp_total = wcp_total | plus: wcp_line_price  %}
+    	{
+		 	"vd_message":{{NextDiscountHtml | json }},
+         	"original_item":{{item | json}},
+		  	"inventory_quantity":"{{ item.variant.inventory_quantity }}",
+		   	"inventory_management":"{{item.variant.inventory_management}}",
+		   	"inventory_policy": "{{item.variant.inventory_policy}}",
+          	"variant_id": {{item.variant_id}},
+          	"product_id": {{item.product.id}},
+          	"quantity": "{{item.quantity}}",
+          	"wcp_v_compare_price": {% if item.variant.compare_at_price == blank %} {{item.variant.price}} {% else %} {{wcp_v_compare_at_price}} {% endif %} ,
+          	"wcp_v_price": {{wcp_v_price}},
+          	"price": {{item.variant.price}},
+          	"compare_at_price": {% if item.variant.compare_at_price == blank %} "null" {% else %} {{item.variant.compare_at_price}} {% endif %},
+          	"wcp_discount": "{{item.product.metafields.wcp_discount | json}}"
+        }
+	 {% unless forloop.last%},{%endunless%}
+      {% else %}
+       {% assign variant_price = item.variant.price %}
+        {% if item.variant.price > item.final_price %}   
+           {% assign variant_price = item.final_price %}
+        {% endif %}
+		{% if item.variant.price > item.discounted_price %}   
+           {% assign variant_price = item.discounted_price %}
+        {% endif %}
+        {% assign wcp_line_price = variant_price | minus: 0 | times: item.quantity %}
+		{% assign wcp_total = wcp_total | plus: wcp_line_price  %}
+        {
+			"vd_message":{{ NextDiscountHtml | json}},
+          	"original_item": {{item | json}},
+			"inventory_quantity":"{{ item.variant.inventory_quantity }}",
+		   	"inventory_management":"{{item.variant.inventory_management}}",
+		   	"inventory_policy": "{{item.variant.inventory_policy}}",
+ 		  	"product_id": {{item.product.id}},
+		  	"variant_id": {{item.variant_id}},
+          	"quantity": {{item.quantity}},
+          	"price": {{variant_price}},
+          	"compare_at_price": {% if item.variant.compare_at_price == blank %} "null" {% else %} {{item.variant.compare_at_price}} {% endif %},
+          	"wcp_discount": "{{item.product.metafields.wcp_discount | json}}",
+          	"wcp_v_compare_price": {% if item.variant.compare_at_price == blank %} "null" {% else %} {{wcp_v_compare_at_price}} {% endif %},
+          	"wcp_v_price": {{variant_price}}
+        }
+    {% unless forloop.last%},{%endunless%}
+     {% endif %}
+{% endfor %} 
+]
+,"wcp_cart_total":{{wcp_total}}
+,"wcp_tag" : {{ wcp_tag }}
+}
+{% endcapture %}
+{{ output | strip_newlines }}

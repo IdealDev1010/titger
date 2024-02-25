@@ -1,0 +1,64 @@
+{% assign wpd_price_vaiables = wpd_discounted_prices | split:'|' %}{% case price_variable %}
+{% when 'wcp_price' %}{{ wpd_price_vaiables[0] }}
+{% when 'wcp_compare_at_price' %}{{ wpd_price_vaiables[1] }}
+{% when 'wcp_compare_at_price_min' %}{{ wpd_price_vaiables[2] }}
+{% when 'wcp_compare_at_price_max' %}{{ wpd_price_vaiables[3]}}
+{% when 'wcp_price_min' %}{{ wpd_price_vaiables[4] }}
+{% when 'wcp_price_max' %}{{ wpd_price_vaiables[5] }}
+{% when 'v_discount_tag' %}{{-wpd_price_vaiables[6]-}}
+{% when 'wcp_discount_value' %}{{- wpd_price_vaiables[7] -}}
+{% when 'p_discount_tag' %}{{- wpd_price_vaiables[8] -}}
+{% when 'wcp_v_price' %}{{ wpd_price_vaiables[0] }}
+{% when 'wcp_v_compare_at_price' %}{{ wpd_price_vaiables[1] }}
+{% endcase %}{% comment %}
+{% capture wpd_discounted_prices %}{%- render 'wcp_discount'  wcp_discount:product , wpd_is_render:'yes' -%}{% endcapture %}
+
+{%- capture wcp_price -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_price' -%}{%- endcapture -%}
+{% assign  wcp_price = wcp_price | minus: 0 %}
+
+{%- capture wcp_compare_at_price  -%}{%- render 'wcp_render_discount', wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_compare_at_price' -%}{%- endcapture -%}
+{% if wcp_compare_at_price != blank %}
+	{% assign  wcp_compare_at_price = wcp_compare_at_price | minus: 0 %}
+{% else %}
+{% assign  wcp_compare_at_price = nil %}
+{% endif %}
+
+{%- capture wcp_compare_at_price_min  -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_compare_at_price_min' -%}{%- endcapture -%}
+{% assign  wcp_compare_at_price_min = wcp_compare_at_price_min | minus: 0 %}
+
+{%- capture wcp_compare_at_price_max  -%}{%- render 'wcp_render_discount', wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_compare_at_price_max' -%}{%- endcapture -%}
+{% assign  wcp_compare_at_price_max = wcp_compare_at_price_max | minus: 0 %}
+
+{%- capture wcp_price_min -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_price_min' -%}{%- endcapture -%}
+{% assign  wcp_price_min = wcp_price_min | minus: 0 %}
+
+{%- capture wcp_price_max -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_price_max' -%}{%- endcapture -%}
+{% assign  wcp_price_max = wcp_price_max | minus: 0 %}
+
+
+{%- capture v_discount_tag -%}{%-render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'v_discount_tag'-%}{%- endcapture -%}
+{% assign v_discount_tag = v_discount_tag | strip %}
+
+{%- capture p_discount_tag -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'p_discount_tag' -%}{%- endcapture -%}
+{% assign p_discount_tag = p_discount_tag | strip %}
+
+{% assign raw_set_prices = product.metafields.wcp_set_prices.wcp_set_prices %}
+{% assign set_prices_array = blank %}
+{% if raw_set_prices %}
+    {% assign set_prices_array = raw_set_prices | split: "," %}
+{% endif %}
+
+{%- capture wcp_discount_value -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wpd_discounted_prices, price_variable:'wcp_discount_value' -%}{%- endcapture -%}
+
+{% capture wcp_v_discounted_prices %}{%- render 'wcp_variant' , wcp_variant:product.selected_or_first_available_variant , set_prices_array:set_prices_array , wpd_is_render:'yes', v_discount_tag : v_discount_tag , wcp_discount_value : wcp_discount_value -%}{%- endcapture -%}
+
+{%- capture wcp_v_price -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wcp_v_discounted_prices, price_variable:'wcp_v_price' -%}{%- endcapture -%}
+{% assign  wcp_v_price = wcp_v_price | minus: 0 %}
+
+{%- capture wcp_v_compare_at_price -%}{%- render 'wcp_render_discount' , wpd_discounted_prices:wcp_v_discounted_prices, price_variable:'wcp_v_compare_at_price' -%}{%- endcapture -%}
+{% if wcp_v_compare_at_price != blank %}
+	{% assign  wcp_v_compare_at_price = wcp_v_compare_at_price | minus: 0 %}
+{% else %}
+{% assign  wcp_v_compare_at_price = nil %}
+{% endif %}
+{% endcomment %}

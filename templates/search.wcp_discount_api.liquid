@@ -1,0 +1,106 @@
+{% layout none %}
+{%- capture contentForQuerystring -%}{{ content_for_header }}{%- endcapture -%}
+{%- assign pageUrl = contentForQuerystring | split:'"pageurl":"' | last | split:'"' | first | split:'.myshopify.com' | last |
+   replace:'\/','/' |
+   replace:'%20',' ' |
+   replace:'\u0026','&'
+-%}
+{% assign handles = pageUrl | split: 'handle=' | last %}
+{% assign h_array = handles | split: ',' %}
+{% capture output %}
+{
+    "products":
+        [
+            {% for handler in h_array %}
+{% assign decoded_handle = handler | url_decode %}
+{% assign item = all_products[decoded_handle] %}
+               {% include 'wcp_discount' with item %}
+                {
+
+                    "id"  : "{{item.id}}"
+                    ,"price_varies":{{item.price_varies | json}}
+                    ,"handle":"{{ item.handle }}"
+                    ,"default_variant_id":"{{item.selected_or_first_available_variant.id}}"
+                    ,"price_min":"{{item.price_min | money_without_currency}}"
+                    ,"price_max":"{{item.price_max | money_without_currency }}"
+                    ,"wpd_price_min":"{{ wcp_price_min | money_without_currency }}"
+                    ,"wpd_price_max":"{{ wcp_price_max | money_without_currency}}"
+                    ,"_wpd_price_min":{{ wcp_price_min }}
+                    ,"_wpd_price_max":{{ wcp_price_max }}
+                    ,"wpd_compare_at_price_min":"{{ wcp_compare_at_price_min | money_without_currency}}"
+                    ,"wpd_compare_at_price_max":"{{ wcp_compare_at_price_max | money_without_currency}}"
+                    ,"_wpd_compare_at_price_min":{{ wcp_compare_at_price_min }}
+                    ,"_wpd_compare_at_price_max":{{ wcp_compare_at_price_max }}
+                    ,"compare_at_price_min":"{{ item.compare_at_price_min | money_without_currency}}"
+                    ,"compare_at_price_max":"{{ item.compare_at_price_max | money_without_currency }}"
+
+                    ,"wpd_price":"{{ wcp_price | money_without_currency}}"
+                    {% if wcp_price == blank %}
+                                 ,"_wpd_price": {{item.price}}
+                                 ,"wpd_compare_at_price":"{{ item.compare_at_price | money_without_currency}}"
+                    {% else %}
+                                 ,"_wpd_price":{{ wcp_price }}
+                                 ,"wpd_compare_at_price":"{{ wcp_compare_at_price | money_without_currency}}"
+                    {% endif %}
+
+                    {% if wcp_compare_at_price == blank %}
+                                 ,"_wpd_compare_at_price":0
+                    {% else %}
+                                 ,"_wpd_compare_at_price":{{ wcp_compare_at_price }}
+                    {% endif %}
+                    ,"price":"{{ item.price | money_without_currency}}"
+                    ,"compare_at_price":"{{ item.compare_at_price | money_without_currency }}"
+
+                    ,"variants":[
+                        {% for varnts in item.variants %}
+                            {
+                                {% include 'wcp_variant' with varnts %}
+                                "id":"{{varnts.id}}"
+                                ,"product_id":"{{item.id}}"
+                                ,"sku":{{varnts.sku | json }}
+                                ,"title":{{varnts.title | json }}
+                                ,"available":"{{varnts.available}}"
+                                ,"price":"{{ varnts.price | money_without_currency}}"
+                                {% if varnts.compare_at_price == blank %}
+                                    ,"compare_at_price":"0"
+                                {% else %}
+                                    ,"compare_at_price":"{{ varnts.compare_at_price | money_without_currency }}"
+                                {% endif %}
+                                {% if wcp_v_compare_at_price == varnts.price %}
+                                    ,"wpd_compare_at_price":"{{ varnts.price | money_without_currency }}"
+                                    ,"_wpd_compare_at_price":{{ varnts.price | json }}
+
+                                {% elsif wcp_v_compare_at_price == blank %}
+                                    ,"wpd_compare_at_price":"0"
+                                    ,"_wpd_compare_at_price":0
+                                {% else %}
+                                    ,"wpd_compare_at_price":"{{wcp_v_compare_at_price | money_without_currency }}"
+                                    ,"_wpd_compare_at_price":{{ wcp_v_compare_at_price }}
+                                {% endif %}
+                                {% if wcp_v_price == varnts.price %}
+                                    ,"wpd_price":"{{ varnts.price | money_without_currency}}"
+                                    ,"_wpd_price":{{ varnts.price }}
+                                {% else %}
+                                    ,"wpd_price":"{{ wcp_v_price | money_without_currency}}"
+                                    ,"_wpd_price":{{ wcp_v_price }}
+                                {% endif %}
+                                {% if set_v_price == null %}
+                                    ,"IsIndividualPrice":false
+                                {% else %}
+                                    ,"IsIndividualPrice":true
+                                {%endif%}
+                                ,"inventory_quantity":"{{ varnts.inventory_quantity }}"
+                                ,"inventory_management":"{{varnts.inventory_management}}"
+                                ,"inventory_policy": "{{varnts.inventory_policy}}"
+                            }
+                        {% unless forloop.last %},{% endunless %}
+                        {% endfor %}
+                    ]
+                }
+                {% unless forloop.last %},{% endunless %}
+
+            {% endfor %}
+        ]
+}
+{% endcapture %}
+{{- output | strip_newlines -}}

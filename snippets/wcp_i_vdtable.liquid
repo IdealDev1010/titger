@@ -1,0 +1,11 @@
+{% if product and customer.tags.size > 0 and template.name == "product"  %}
+{%- include 'wcp_discount' with product -%}
+{%- assign current_variant = product.selected_or_first_available_variant -%}
+{% include 'wcp_variant' with current_variant %}
+{% include 'wcp_vd_table_change' with product %}
+{% include 'wcp_variant' with current_variant %}
+{% include 'wcp_vd_product' with product %}
+<div style="display:none!important;" id="wcp_vd_HTML_table_tmp">{{wcp_vd_HTML_table_tmp}}</div>
+<div style="display:none" id='wcp_vd_table'><div><b>{% unless wcp_vd_HTML_table == '' or  wcp_vd_HTML_table == blank %}<br><span>{{shop.metafields.wcp_net.VDTableNote}}<br/></span>{% endunless %}</b><div class-data="{{wcp_vd_HTML_table}}"  style ='margin-top :20px;'>{{wcp_vd_HTML_table}}</div></div></div>
+<script>window.shopifyProduct = '{{ product.selected_or_first_available_variant.id }}';</script>
+{% endif %}

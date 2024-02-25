@@ -1,0 +1,107 @@
+{% layout none %}
+{% capture output %}
+{
+	{% assign WPDVdTable = '' %}
+    {% assign productMinPrice = product.price_min | money_with_currency %}
+    {% assign productMaxPrice = product.price_max | money_with_currency %}
+	{% assign productDefaultVariantPrice = product.selected_or_first_available_variant.price | money_with_currency %}
+	{% assign productDefaultVariantCompareAtPrice = product.selected_or_first_available_variant.compare_at_price | money_with_currency %}
+	{% assign productDefaultVariantRawPrice = product.selected_or_first_available_variant.price %}
+	{% assign productDefaultVariantCompareAtRawPrice = product.selected_or_first_available_variant.compare_at_price %}
+
+    {% capture wpd_check %}{% include 'wcp_discount' with product %}{% endcapture %}
+    {% unless wpd_check contains "Liquid error" %}
+
+    {% include 'wcp_variant' with product.selected_or_first_available_variant %}
+	{% include 'wcp_vd_table_change' with product %}
+	{% include 'wcp_variant' with product.selected_or_first_available_variant %}
+    {% include 'wcp_vd_product' with product %}
+	{% include 'wcp_variant' with product.selected_or_first_available_variant %}
+
+    {% assign WPDVdTable = wcp_vd_HTML_table %}
+    {% assign productMinPrice = wcp_price_min | money_with_currency %}
+    {% assign productMaxPrice = wcp_price_max | money_with_currency %}
+	{% assign productDefaultVariantPrice = wcp_v_price | money_with_currency %}
+	{% assign productDefaultVariantCompareAtPrice = wcp_v_compare_at_price | money_with_currency %}
+	{% assign productDefaultVariantRawPrice = wcp_v_price %}
+	{% assign productDefaultVariantCompareAtRawPrice = wcp_v_compare_at_price %}
+
+    {% endunless %}          
+
+    {% assign productImage = product.images[0] | product_img_url: 'master' %}
+
+    "WPDVdTable":{{ WPDVdTable | json }}
+    ,"productId"  : "{{ product.id}}"
+    ,"productHandle": {{ product.handle | json }}
+    ,"option1":{{ product.options[0] | json }}
+    ,"option2": {{ product.options[1] | json }}
+    ,"option3":{{ product.options[2] | json }}
+    ,"productOptions":
+    [
+     {%- for option in product.options_with_values -%}       
+       {
+           "name" : {{ option.name | json}},
+           "position": "{{ option.position }}",
+           "values": {{ option.values | json }},
+           "selectedValue": {{ option.selected_value | json }}
+       }
+       {% unless forloop.last %},{% endunless %}
+     {% endfor %}
+     ]
+    ,"productTitle":{{ product.title | json }}
+    ,"productMinPrice":{{ productMinPrice | json }} 
+    ,"productMaxPrice":{{ productMaxPrice | json }}
+    ,"productDescription":{{ product.description | json }}
+    ,"productImages" : [{% for image in product.images %}{ "src":"{{ image | product_img_url: 'master' }}"}{% unless forloop.last %},{% endunless %} {% endfor %}]
+    ,"productImage" : {{ productImage | json }}
+	,"ProductDefaultVariantId" : "{{ product.selected_or_first_available_variant.id}}"
+	,"ProductDefaultVariantAvailable" : "{{ product.selected_or_first_available_variant.available}}"
+	,"productDefaultVariantPrice":{{productDefaultVariantPrice | json}}
+	,"productDefaultVariantCompareAtPrice":{{productDefaultVariantCompareAtPrice | json}}
+	,"productDefaultVariantRawPrice": "{{productDefaultVariantRawPrice}}"
+	,"productDefaultVariantCompareAtRawPrice": "{{productDefaultVariantCompareAtRawPrice}}"
+    ,"productDefaultVariantSku": "{{ product.selected_or_first_available_variant.sku }}"
+	,"wholeVdData": {{ wcp_vd_HTML_table_tmp | json }}
+    ,"productVariants":
+        [
+          {% for variant in product.variants %}
+          { 
+            {% assign variantPrice = variant.price | money_with_currency %}
+            {% assign variantCompareAtPrice = variant.compare_at_price | money_with_currency %}
+            {% assign variantRawPrice = variant.price %}
+            {% assign variantRawCompareAtPrice = variant.compare_at_price %}
+
+            {% capture wpd_check %}{% include 'wcp_variant' with variant %}{% endcapture %}
+            {% unless wpd_check contains "Liquid error" %}
+
+            {% assign variantCompareAtPrice = wcp_v_compare_at_price | money_with_currency %}
+            {% assign variantPrice = wcp_v_price | money_with_currency %}
+            {% assign variantRawPrice = wcp_v_price %}
+            {% assign variantRawCompareAtPrice = wcp_v_compare_at_price %}
+
+            {% endunless %}  
+
+            {% assign variantThumbURL = variant.image.src | product_img_url: 'master' %}
+
+            "variantId":"{{variant.id}}"
+            ,"variantOption1":{{ variant.option1 | json }}
+            ,"variantOption2":{{ variant.option2 | json }}
+            ,"variantOption3":{{ variant.option3 | json }}
+            ,"variantSku":{{ variant.sku | json }}
+            ,"variantTitle":{{ variant.title | json }}
+            ,"variantPrice":{{ variantPrice | json }}
+            ,"variantRawPrice":"{{variantRawPrice}}"
+            ,"variantCompareAtPrice":{{ variantCompareAtPrice | json }}
+            ,"variantRawCompareAtPrice":"{{variantRawCompareAtPrice}}"            
+            ,"variantImg": [{ "variantImages": {{ variantThumbURL | json }}}]
+			,"variantAvailable" : "{{ variant.available}}"
+            ,"variantInventory" : "{{ variant.inventory_quantity }}"
+            ,"variantInventoryManagement" : "{{ variant.inventory_management }}"
+            ,"variantInventoryPolicy" : "{{ variant.inventory_policy }}"
+          }
+          {% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+}
+{% endcapture %}
+{{ output | strip_newlines }}

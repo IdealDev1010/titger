@@ -1,0 +1,53 @@
+{% assign currencyCount = shop.enabled_currencies | size %}
+{% assign customer_tags = blank %}
+{% for tag in customer.tags %}
+  {% assign tempTag = tag | downcase %}
+  {% assign customer_tags = customer_tags | prepend: tempTag %}
+  {% unless forloop.last %}
+    {% assign customer_tags = customer_tags | prepend: ',' %}
+  {% endunless %}
+{% endfor %}
+{% assign customer_tags = customer_tags | split: ',' %}
+
+{% assign is_wcp_wholesale_customer = false %}
+{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+{% assign active_discounts_array = active_discounts | split: ',' %}
+{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+  {% for discount_key in active_discounts_array %}
+    {% assign key_split = discount_key | split: '-' %}
+    {% assign key_split_length = key_split | size %}
+    {% if key_split_length > 2 %}
+      {% assign removeable_key = key_split.last | prepend: '-' %}
+      {% assign wcp_hide_sale_badge_customer_tag = discount_key | remove_last: removeable_key %}
+    {% else %}
+      {% assign wcp_hide_sale_badge_customer_tag = key_split[0] %}
+    {% endif %}
+    {% assign wcp_hide_sale_badge_customer_tag = wcp_hide_sale_badge_customer_tag | downcase %}
+    {% if customer_tags contains wcp_hide_sale_badge_customer_tag %}
+      {% assign is_wcp_wholesale_customer = true %}
+    {% endif %}
+  {% endfor %}
+{% endif %}
+{% if is_wcp_wholesale_customer == true and shop.metafields.wpd.subscribed_plan != 'global' %}
+  {% unless currencyCount == 1 %}
+    {% unless shop.metafields.wcp_net.MultiCurrencyMsg == blank or shop.metafields.wcp_net.MultiCurrencyMsg == '' %}
+      {% assign MultiCurrency_Msg = shop.metafields.wcp_net.MultiCurrencyMsg | replace: "[currency]", shop.currency %}
+      <div class="wcp_multicurrency_msg_container">
+        <p class="wcp_multicurrency_msg">{{ MultiCurrency_Msg }}</p>
+      </div>
+    {% endunless %}
+  {% endunless %}
+  {% if template == 'cart' %}
+      <script>          
+        let userMarketId = "{{ localization.market.id }}";                
+        if(window.wpdPrimaryMarketId != undefined && window.wpdPrimaryMarketId != userMarketId){
+          window.location.href = "/cart?currency={{shop.currency}}";
+        }
+        {% unless currencyCount == 1 %}
+          {% if cart.currency.iso_code != shop.currency %}
+            window.location.href = "/cart?currency={{shop.currency}}";
+          {% endif %}
+        {% endunless %}
+      </script>
+  {% endif %}
+{% endif %}

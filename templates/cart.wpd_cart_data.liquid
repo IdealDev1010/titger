@@ -1,0 +1,38 @@
+{% layout none %}
+{% capture output %}
+{
+	{% assign cartTotal = 0 %}    
+	{% assign wcp_total_price = 0 %}
+    "items":
+	[
+		{%- for item in cart.items -%}
+            {%- include 'wcp_discount' with item.product -%}
+            {%- include 'wcp_variant' with item.variant -%}
+            {% include 'wcp_vd_discount' with item %}
+            {% assign wcp_line_price = wcp_v_price | minus: 0 | times: item.quantity %}
+      		{% assign wcp_total_price = wcp_total_price | plus: wcp_line_price %}        
+			{% assign lineItemPrice = wcp_line_price | money %}
+			{% assign lineItemOriginalPrice = item.original_line_price | money %}
+			{% assign lineItemRawPrice = wcp_line_price %}
+			{% assign lineItemRawOriginalPrice = item.original_line_price %}
+			{
+				"id": "{{item.id}}"
+            	,"variantId": "{{item.variant_id}}"
+                ,"productId": "{{item.product_id}}"
+                ,"quantity": "{{item.quantity}}"
+                ,"title": {{ item.title | json }}
+				,"image": {{ item.image | img_url: '300x' | json }}
+				,"lineItemPrice": {{ lineItemPrice | json }}
+				,"lineItemOriginalPrice": {{ lineItemOriginalPrice | json }}
+				,"lineItemRawPrice": {{ lineItemRawPrice | json }}
+				,"lineItemRawOriginalPrice": {{ lineItemRawOriginalPrice | json }}
+				,"VDNextDiscountHtml" : {{ NextDiscountHtml | json }}
+              }
+		{% unless forloop.last %},{% endunless %}
+		{% endfor %}
+		{% assign cartTotal = wcp_total_price | money %}    
+	],
+	"cartTotal": {{ cartTotal | json }}
+}
+{% endcapture %}
+{{ output | strip_newlines }}

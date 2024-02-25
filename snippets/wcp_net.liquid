@@ -1,0 +1,1270 @@
+<style>
+  #wpdNetMainContainer *{
+    color: rgba(0, 0, 0, 0.50);
+  }
+  
+  #wpdNetOverlay{
+    position:fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    background-color:#333333c9;
+    width:100%;
+    height:100%;
+    display: none;
+    z-index: 999;
+  }
+  
+  #wpdNetMainContainer{
+    position: fixed;
+    top: 0px;
+    bottom: 0px;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    margin: 50px 100px;
+    padding:40px;
+    display: none;    
+    z-index: 999;
+    overflow: auto;    
+  }
+  #wpdCloseNetPopup{
+    cursor: pointer;
+    width: 40px;
+    background: rgba(0, 0, 0, 0.05);
+    display: flex;
+    padding: 8px;
+    align-items: flex-start;
+  }
+  
+  #wpdNetHeaderWrapper{
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    align-items: center;
+  }
+  
+  #wpdNetTitle{
+    color: #000;
+    font-family: Fraunces;
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 32px; /* 133.333% */
+  }
+
+  #wpdNetContentWrapper {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: flex-start;
+      column-gap: 80px;
+  }
+
+  #wpdNetLeftContent {
+      max-width: calc(100% - 12.5px);
+      flex: 2 2 400px;
+      min-width: 51%;
+  }
+
+  #wpdNetRightContent {
+      max-width: calc(100% - 12.5px);
+      flex: 1 1 0;
+      min-width: 400px;
+      padding: 24px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+
+  #wpdExtraFieldsWrapper {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 40px;
+      row-gap: 40px;
+      margin: 0 0 24px 0;
+  }
+
+  .wpd-extra-field {
+      display: flex;
+      flex-direction: column;
+      row-gap: 8px;
+      position: relative;
+  }
+
+  .wpd-extra-field label, .wpd-shipping-field-wrapper label, .wpd-billing-field-wrapper label {
+      font-size: 14px;
+      line-height: 16px;
+  }
+
+  .wpd-extra-field input, .wpd-extra-field textarea, .wpd-extra-field select,
+  .wpd-shipping-field-wrapper input, .wpd-shipping-field-wrapper textarea, .wpd-shipping-field-wrapper select,
+  .wpd-billing-field-wrapper input, .wpd-billing-field-wrapper textarea, .wpd-billing-field-wrapper select,
+  #wpdCustomerSavedAddressWrapper select, #wpdShippingRates {
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 14px 16px;
+      border: 1px solid rgba(0, 0, 0, 0.8);
+      font-size: 16px;
+      line-height: 16px;
+      margin:0 !important;
+  }
+
+  #wpdShippingAddressHeader, #wpdBillingAddressHeader {
+      font-size: 14px;
+      line-height: 16px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      font-weight: 400;
+      color:#000;
+  }
+
+  #wpdNetContentWrapper select {
+      font-family: inherit;
+  }
+
+  #wpdShippingFieldsWrapper, #wpdBillingFieldsWrapper {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 40px;
+      row-gap: 40px;
+      margin: 24px 0;
+  }
+
+  #wpdBillingFieldsWrapper {
+      display: none;
+  }
+
+  .wpd-shipping-field-wrapper, .wpd-billing-field-wrapper {
+      display: flex;
+      flex-direction: column;
+      row-gap: 8px;
+  }
+
+  #wpdCustomerSavedAddressWrapper {
+      display: flex;
+      flex-direction: column;
+      row-gap: 8px;
+  }
+
+  #wpdBillingAddressWrapper, #wpdShippingAddressWrapper, #wpdShippingRateWrapper {
+      margin: 48px 0;
+  }
+
+  #wpdShippingRateWrapper *{
+    color:#000 !important;  
+  }
+  
+  #wpdNetPlaceOrder {
+      padding: 14px 0px;
+      min-width: 320px;    
+      position: relative;
+      font-size: 15px;
+      line-height: 20px;
+      background: #000;
+      color:white;
+      cursor: pointer;
+      border:none !important;
+  }
+
+  #wpdOrderHeader {
+      font-weight: 700;
+      font-size: 20px;
+      line-height: 24px;
+      margin-bottom: 16px;
+  }
+
+  .wpd-net-cart-item {
+      padding: 24px 0;
+      box-shadow: 0px 1px 0px rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      column-gap: 24px;
+      position: relative;      
+  }
+
+  .wpd-net-cart-item:last-child {
+      box-shadow: none !important;
+  }
+
+  .wpd-net-cart-item-quantity {
+      font-weight: 700;
+      font-size: 16px;
+      line-height: 24px;
+      min-width: 40px;
+  }
+
+  .wpd-net-cart-item-image-wrapper{
+    padding-top: 10%;
+    position: relative;
+    overflow: hidden;
+    width: 72px;
+  }
+
+  .wpd-net-cart-item-image {
+     width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+      object-fit: scale-down;
+      object-position: center !important;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background-color: #fafafa;
+  }
+  
+  .wpd-net-cart-item-info-wrapper {
+      display: flex;
+      flex-direction: column;
+      row-gap: 4px;
+  }
+  
+  .wpd-net-cart-item-price {
+      font-weight: 700;
+      color:#000 !important;
+  }
+  
+  .wpd-net-cart-item-title{
+     color:#000 !important; 
+  }
+
+  #wpdNetCartFooter {
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      padding: 24px;
+      margin: 0 -24px;
+      padding-bottom: 0;
+  }
+
+  #wpdNetCartTotalInfoWrapper {
+      display: flex;
+      flex-direction: column;
+  }
+
+  .wpd-net-cart-total-info-items {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+  }
+
+  #wpdNetCartTotalWrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px solid #000000;
+      margin-top: 12px;
+      padding-top: 16px;
+  }
+  
+  #wpdNetCartTotalWrapper * {
+      font-weight: 700;
+      color:#000 !important;
+  }
+
+  #wpdNetCrossOutTotalValue{
+    margin-right:8px;
+    color: rgba(0, 0, 0, 0.50) !important;
+    font-size: 16px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 24px;
+    text-decoration: line-through;
+  }
+
+  #wpdNetCartItemsWrapper {
+      max-height: 500px;
+      overflow: auto;
+      margin: 0 -24px;
+      padding: 0 24px;
+  }
+
+  #wpdSameBillingAddressWrapper {
+      width: fit-content;
+      display: flex;
+      column-gap: 5px;
+      align-items: center;
+  }
+
+  #wpdSameBillingAddress {
+      width: 18px;
+      height: 18px;
+  }
+
+  #wpdShippingChargeWrapper {
+      display: none;
+  }
+
+  #wpdNetCartTotalValueWrapper {
+      position: relative;
+  }
+
+  #wpdApplyDiscountWrapper {
+      display: none;
+  }
+
+  #wpdApplyDiscountButton {
+      background: #000000;
+      padding: 12px 0;
+      color: white;
+      width: 100%;
+  }
+
+  #wpdApplyDiscountButton .show-loader-spinner {
+      border-right-color: #ffffff;
+      border-bottom-color: #ffffff;
+  }
+
+  #wpdDiscountCodeSuccessTagWrapper {
+      display: none;
+  }
+  
+  #wpdSameBillingAddress{
+    accent-color: #000000;
+  }
+  
+  #wpdShippingRateContainer{
+    display: flex;
+    gap: 16px;    
+  }
+  
+  #wpdShippingRateHeader{
+    font-size: 14px;
+    line-height: 16px;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    font-weight: 400; 
+  }
+
+  #wpdFetchShippingRates{
+    padding: 14px 24px;
+    border: 1px solid #000000;
+    background-color:white;
+    color:#000;    
+    font-size: 15px;
+    font-weight: 400;
+    line-height: 20px;
+    letter-spacing: 0em;
+    text-align: left;
+    display:flex;
+    align-items:center;
+    min-width: 210px;
+  }
+
+  #wpdShippingSvgIcon{
+    width: 20px;
+    height: 20px;
+    margin-right:4px;
+  }
+  
+  #wpdNetShippingSelectWrapper{
+    display:flex;
+    flex-direction: column;    
+    width:100%;
+  }
+  
+  .wpd-disable{
+    cursor: not-allowed;
+  }
+  
+  .wpd-disable #wpdShippingRates{
+    opacity:0.5;
+    pointer-events:none;
+  }
+  
+  .wpd-disable #wpdNetShippingSelectLabel{
+    color: rgba(0, 0, 0, 0.50) !important;
+  }
+  
+  #wpdNetShippingSelectLabel{
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 16px;
+    letter-spacing: 0em;
+    text-align: left;
+    margin-top: -22px;
+    margin-bottom: 8px;
+  }
+
+  #wpdNetDiscountCodeWrapper{
+    padding: 24px 32px;
+    border-top: 1px solid rgba(0, 0, 0, 0.10);
+    margin: 0 -24px;
+  }
+
+  #wpdNetDiscountCodeHeader{
+    color: rgba(0, 0, 0, 0.50);
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 16px;
+  }
+
+  #wpdNetDiscountCodeFieldsWrapper{
+    display:flex;
+    gap:16px;
+  }
+
+  #wpdNetDiscountCodeTxt{    
+    padding: 16px;
+    outline: none !important;
+    box-shadow: none;
+    border: 1px solid rgba(0, 0, 0, 0.8);
+    width: 100%;
+    margin:0 !important;
+  }
+  
+  #wpdNetDiscountCodeBtn{
+    padding: 14px 24px;
+    background: #000;
+    color:white;
+    cursor:pointer;
+    border:none !important;
+    position: relative;
+  }
+  
+  #wpdNetShippingNote{
+    color: #916A00;
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px;
+    background: #FFD79D;    
+    padding: 12px 24px;
+    margin-bottom:24px;
+    display:none;
+  }
+
+  #wpdNetCorrectDiscountCodeWrapper{    
+    padding: 12px 12px 12px 24px;    
+    font-size: 14px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 20px;
+    display:none;
+    gap: 16px;
+    align-items: center;
+  }
+  
+  #wpdNetCorrectDiscountCodeWrapper.success{        
+    background: #AEE9D1;
+    color: #008060;    
+    display:flex !important;
+  }
+
+  #wpdNetCorrectDiscountCodeWrapper.success svg{        
+    width:28px;
+    height:28px;
+    cursor:pointer;
+  }
+  
+  #wpdNetCorrectDiscountCodeWrapper.error{      
+    margin-bottom:24px;
+    background: #8b00006b;
+    color: #680404;    
+    display:block !important;
+  }
+
+  #wpdNetCorrectDiscountCodeWrapper.error svg, #wpdNetCorrectDiscountCodeWrapper.success+#wpdNetDiscountCodeFieldsWrapper{
+    display:none;
+  }
+
+  #wpdNetOrderSuccessWrapper{
+    text-align: center;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    padding: 56px 40px;
+    background: rgba(0, 0, 0, 0.05);
+    max-width: 400px;
+    margin: 0 auto;
+    position: relative;
+    top: 40%;
+    -webkit-transform: translateY(-50%);
+    -ms-transform: translateY(-50%);
+    transform: translateY(-50%);    
+  }
+  
+  #wpdNetOrderSuccessWrapper svg{
+    margin-bottom: 32px;
+    width: 48px;
+    height: 48px;
+  }
+  
+  #wpdNetOrderSuccessMsg{
+    color: #000;
+    text-align: center;  
+    font-size: 24px;
+    font-style: normal;
+    font-weight: 400;
+    line-height: 32px; /* 133.333% */
+  } 
+  
+  #wpdCloseNetPopup:hover {
+    background: rgb(0 0 0 / 15%);
+  }
+
+   #wpdSameBillingAddressWrapper label{
+    margin: 0 !important;
+   }
+
+  .wpd-loader-wrapper {
+    display: none;
+    position: absolute;
+    left: 50%;
+  }
+  
+  .wpd-show-loader-spinner {
+    display: block !important;
+    border: 4px solid black;
+    border-top-color: rgb(255 255 255);
+    border-left-color: rgb(255 255 255);
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    animation: wpdLoadingSpinner 0.7s infinite linear;
+    -webkit-animation: wpdLoadingSpinner 0.7s infinite linear;
+    position: relative;
+    left: -50%;
+  }
+
+  .wpd-loader-button-label{
+    color: white !important;
+  }
+  
+  .wpd-button-loading .wpd-loader-wrapper {
+    display: block !important;
+  }
+  
+  .wpd-button-loading .wpd-button-text {
+    opacity: 0;
+  }
+  
+  @keyframes wpdLoadingSpinner {
+    from {transform: rotate(0deg);}
+    to {transform: rotate(360deg);}
+  }
+  
+  @-webkit-keyframes wpdLoadingSpinner {
+    from {-webkit-transform: rotate(0deg);}
+    to {-webkit-transform: rotate(360deg);}
+  }
+  
+  @media only screen and (max-width: 600px) {
+      #wpdExtraFieldsWrapper, #wpdShippingFieldsWrapper, #wpdBillingFieldsWrapper {
+          grid-template-columns: repeat(1, minmax(0, 1fr));
+      }
+  
+      #wpdNetPlaceOrder {
+          width: 100%;
+          margin-top: 24px;
+      }
+
+      #wpdNetMainContainer{
+        margin:0 !important;
+      }
+
+      #wpdNetShippingSelectLabel{
+        margin-top:0 !important;
+      }
+
+      #wpdFetchShippingRates, #wpdNetShippingSelectWrapper{
+        width:100%
+      }
+  }
+  
+  /* date picket css  */
+  .pika-single {
+      z-index: 9999;
+      display: block;
+      position: relative;
+      color: #333;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-bottom-color: #bbb;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif
+  }
+  
+  .pika-single:after, .pika-single:before {
+      content: " ";
+      display: table
+  }
+  
+  .pika-single:after {
+      clear: both
+  }
+  
+  .pika-single.is-hidden {
+      display: none
+  }
+  
+  .pika-single.is-bound {
+      position: absolute;
+      box-shadow: 0 5px 15px -5px rgba(0, 0, 0, .5)
+  }
+  
+  .pika-lendar {
+      float: left;
+      width: 240px;
+      margin: 8px
+  }
+  
+  .pika-title {
+      position: relative;
+      text-align: center
+  }
+  
+  .pika-label {
+      display: inline-block;
+      position: relative;
+      z-index: 9999;
+      overflow: hidden;
+      margin: 0;
+      padding: 5px 3px;
+      font-size: 14px;
+      line-height: 20px;
+      font-weight: 700;
+      background-color: #fff
+  }
+  
+  .pika-title select {
+      cursor: pointer;
+      position: absolute;
+      z-index: 9998;
+      margin: 0;
+      left: 0;
+      top: 5px;
+      filter: alpha(opacity=0);
+      opacity: 0
+  }
+  
+  .pika-next, .pika-prev {
+      overflow: hidden !important;
+      display: block;
+      cursor: pointer;
+      position: relative;
+      outline: 0;
+      border: 0;
+      padding: 0;
+      width: 20px;
+      height: 30px;
+      text-indent: 20px;
+      white-space: nowrap;
+      background-color: transparent;
+      background-position: center center;
+      background-repeat: no-repeat;
+      background-size: 75% 75%;
+      opacity: .5
+  }
+  
+  .pika-next:hover, .pika-prev:hover {
+      opacity: 1
+  }
+  
+  .is-rtl .pika-next, .pika-prev {
+      float: left;
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAeCAYAAAAsEj5rAAAAUklEQVR42u3VMQoAIBADQf8Pgj+OD9hG2CtONJB2ymQkKe0HbwAP0xucDiQWARITIDEBEnMgMQ8S8+AqBIl6kKgHiXqQqAeJepBo/z38J/U0uAHlaBkBl9I4GwAAAABJRU5ErkJggg==)
+  }
+  
+  .is-rtl .pika-prev, .pika-next {
+      float: right;
+      background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAeCAYAAAAsEj5rAAAAU0lEQVR42u3VOwoAMAgE0dwfAnNjU26bYkBCFGwfiL9VVWoO+BJ4Gf3gtsEKKoFBNTCoCAYVwaAiGNQGMUHMkjGbgjk2mIONuXo0nC8XnCf1JXgArVIZAQh5TKYAAAAASUVORK5CYII=)
+  }
+  
+  .pika-next.is-disabled, .pika-prev.is-disabled {
+      cursor: default;
+      opacity: .2
+  }
+  
+  .is-disabled .pika-button, .is-outside-current-month .pika-button {
+      opacity: .3;
+      color: #999
+  }
+  
+  .pika-select {
+      display: inline-block
+  }
+  
+  .pika-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      border: 0
+  }
+  
+  .pika-table td, .pika-table th {
+      width: 14.285714285714286%;
+      padding: 0
+  }
+  
+  .pika-table th {
+      color: #999;
+      font-size: 12px;
+      line-height: 25px;
+      font-weight: 700;
+      text-align: center
+  }
+  
+  .pika-button {
+      cursor: pointer;
+      display: block;
+      box-sizing: border-box;
+      -moz-box-sizing: border-box;
+      outline: 0;
+      border: 0;
+      margin: 0;
+      width: 100%;
+      padding: 5px;
+      color: #666;
+      font-size: 12px;
+      line-height: 15px;
+      text-align: right;
+      background: #f5f5f5
+  }
+  
+  .is-disabled .pika-button, .is-selection-disabled {
+      pointer-events: none;
+      cursor: default
+  }
+  
+  .pika-week {
+      font-size: 11px;
+      color: #999
+  }
+  
+  .is-today .pika-button {
+      color: #3af;
+      font-weight: 700
+  }
+  
+  .has-event .pika-button, .is-selected .pika-button {
+      color: #fff;
+      font-weight: 700;
+      background: #3af;
+      box-shadow: inset 0 1px 3px #178fe5;
+      border-radius: 3px
+  }
+  
+  .has-event .pika-button {
+      background: #005da9;
+      box-shadow: inset 0 1px 3px #0076c9
+  }
+  
+  .is-disabled .pika-button, .is-inrange .pika-button {
+      background: #D5E9F7
+  }
+  
+  .is-startrange .pika-button {
+      color: #fff;
+      background: #6CB31D;
+      box-shadow: none;
+      border-radius: 3px
+  }
+  
+  .is-endrange .pika-button {
+      color: #fff;
+      background: #3af;
+      box-shadow: none;
+      border-radius: 3px
+  }
+  
+  .pika-button:hover, .pika-row.pick-whole-week:hover .pika-button {
+      color: #fff;
+      background: #ff8000;
+      box-shadow: none;
+      border-radius: 3px
+  }
+  
+  .pika-table abbr {
+      border-bottom: none;
+      cursor: help
+  }
+</style>
+<script src="{{ 'shopify_common.js' | shopify_asset_url }}" async></script>
+{% if shop.metafields.wcp_net.isdisplayDate == 'true' or shop.metafields.wcp_net.isdisplayDate == '1'  %}
+  <script type="text/javascript">
+  !function(e,t){"use strict";var n;if("object"==typeof exports){try{n=require("moment")}catch(e){}module.exports=t(n)}else"function"==typeof define&&define.amd?define(function(e){try{n=e("moment")}catch(e){}return t(n)}):e.Pikaday=t(e.moment)}(this,function(e){"use strict";var t="function"==typeof e,n=!!window.addEventListener,a=window.document,i=window.setTimeout,s=function(e,t,a,i){n?e.addEventListener(t,a,!!i):e.attachEvent("on"+t,a)},o=function(e,t,a,i){n?e.removeEventListener(t,a,!!i):e.detachEvent("on"+t,a)},r=function(e,t){return-1!==(" "+e.className+" ").indexOf(" "+t+" ")},l=function(e,t){r(e,t)||(e.className=""===e.className?t:e.className+" "+t)},h=function(e,t){var n;e.className=(n=(" "+e.className+" ").replace(" "+t+" "," ")).trim?n.trim():n.replace(/^\s+|\s+$/g,"")},d=function(e){return/Array/.test(Object.prototype.toString.call(e))},u=function(e){return/Date/.test(Object.prototype.toString.call(e))&&!isNaN(e.getTime())},c=function(e,t){return[31,(n=e,n%4==0&&n%100!=0||n%400==0?29:28),31,30,31,30,31,31,30,31,30,31][t];var n},f=function(e){u(e)&&e.setHours(0,0,0,0)},g=function(e,t){return e.getTime()===t.getTime()},m=function(e,t,n){var a,i;for(a in t)(i=void 0!==e[a])&&"object"==typeof t[a]&&null!==t[a]&&void 0===t[a].nodeName?u(t[a])?n&&(e[a]=new Date(t[a].getTime())):d(t[a])?n&&(e[a]=t[a].slice(0)):e[a]=m({},t[a],n):!n&&i||(e[a]=t[a]);return e},p=function(e,t,n){var i;a.createEvent?((i=a.createEvent("HTMLEvents")).initEvent(t,!0,!1),i=m(i,n),e.dispatchEvent(i)):a.createEventObject&&(i=a.createEventObject(),i=m(i,n),e.fireEvent("on"+t,i))},y=function(e){return e.month<0&&(e.year-=Math.ceil(Math.abs(e.month)/12),e.month+=12),e.month>11&&(e.year+=Math.floor(Math.abs(e.month)/12),e.month-=12),e},D={field:null,bound:void 0,ariaLabel:"Use the arrow keys to pick a date",position:"bottom",reposition:!1,format:"YYYY-MM-DD",toString:null,parse:null,defaultDate:null,setDefaultDate:!1,firstDay:0,formatStrict:!1,minDate:null,maxDate:null,yearRange:10,showWeekNumber:!1,pickWholeWeek:!1,minYear:2018,maxYear:9999,minMonth:void 0,maxMonth:void 0,startRange:null,endRange:null,isRTL:!1,yearSuffix:"",showMonthAfterYear:!1,showDaysInNextAndPreviousMonths:!1,enableSelectionDaysInNextAndPreviousMonths:!1,numberOfMonths:1,mainCalendar:"left",container:void 0,blurFieldOnSelect:!0,i18n:{previousMonth:"Previous Month",nextMonth:"Next Month",months:["January","February","March","April","May","June","July","August","September","October","November","December"],weekdays:["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],weekdaysShort:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"]},theme:null,events:[],onSelect:null,onOpen:null,onClose:null,onDraw:null,keyboardInput:!0},v=function(e,t,n){for(t+=e.firstDay;t>=7;)t-=7;return n?e.i18n.weekdaysShort[t]:e.i18n.weekdays[t]},b=function(e){var t=[],n="false";if(e.isEmpty){if(!e.showDaysInNextAndPreviousMonths)return'<td class="is-empty"></td>';t.push("is-outside-current-month"),e.enableSelectionDaysInNextAndPreviousMonths||t.push("is-selection-disabled")}return e.isDisabled&&t.push("is-disabled"),e.isToday&&t.push("is-today"),e.isSelected&&(t.push("is-selected"),n="true"),e.hasEvent&&t.push("has-event"),e.isInRange&&t.push("is-inrange"),e.isStartRange&&t.push("is-startrange"),e.isEndRange&&t.push("is-endrange"),'<td data-day="'+e.day+'" class="'+t.join(" ")+'" aria-selected="'+n+'"><button class="pika-button pika-day" type="button" data-pika-year="'+e.year+'" data-pika-month="'+e.month+'" data-pika-day="'+e.day+'">'+e.day+"</button></td>"},_=function(e,t,n,a,i,s){var o,r,l,h,u,c=e._o,f=n===c.minYear,g=n===c.maxYear,m='<div id="'+s+'" class="pika-title" role="heading" aria-live="assertive">',p=!0,y=!0;for(l=[],o=0;o<12;o++)l.push('<option value="'+(n===i?o-t:12+o-t)+'"'+(o===a?' selected="selected"':"")+(f&&o<c.minMonth||g&&o>c.maxMonth?'disabled="disabled"':"")+">"+c.i18n.months[o]+"</option>");for(h='<div class="pika-label">'+c.i18n.months[a]+'<select class="pika-select pika-select-month" tabindex="-1">'+l.join("")+"</select></div>",d(c.yearRange)?(o=c.yearRange[0],r=c.yearRange[1]+1):(o=n-c.yearRange,r=1+n+c.yearRange),l=[];o<r&&o<=c.maxYear;o++)o>=c.minYear&&l.push('<option value="'+o+'"'+(o===n?' selected="selected"':"")+">"+o+"</option>");return u='<div class="pika-label">'+n+c.yearSuffix+'<select class="pika-select pika-select-year" tabindex="-1">'+l.join("")+"</select></div>",c.showMonthAfterYear?m+=u+h:m+=h+u,f&&(0===a||c.minMonth>=a)&&(p=!1),g&&(11===a||c.maxMonth<=a)&&(y=!1),0===t&&(m+='<button class="pika-prev'+(p?"":" is-disabled")+'" type="button">'+c.i18n.previousMonth+"</button>"),t===e._o.numberOfMonths-1&&(m+='<button class="pika-next'+(y?"":" is-disabled")+'" type="button">'+c.i18n.nextMonth+"</button>"),m+"</div>"},w=function(e,t,n){return'<table cellpadding="0" cellspacing="0" class="pika-table" role="grid" aria-labelledby="'+n+'">'+function(e){var t,n=[];for(e.showWeekNumber&&n.push("<th></th>"),t=0;t<7;t++)n.push('<th scope="col"><abbr title="'+v(e,t)+'">'+v(e,t,!0)+"</abbr></th>");return"<thead><tr>"+(e.isRTL?n.reverse():n).join("")+"</tr></thead>"}(e)+("<tbody>"+t.join("")+"</tbody>")+"</table>"},M=function(o){var l=this,h=l.config(o);l._onMouseDown=function(e){if(l._v){var t=(e=e||window.event).target||e.srcElement;if(t)if(r(t,"is-disabled")||(!r(t,"pika-button")||r(t,"is-empty")||r(t.parentNode,"is-disabled")?r(t,"pika-prev")?l.prevMonth():r(t,"pika-next")&&l.nextMonth():(l.setDate(new Date(t.getAttribute("data-pika-year"),t.getAttribute("data-pika-month"),t.getAttribute("data-pika-day"))),h.bound&&i(function(){l.hide(),h.blurFieldOnSelect&&h.field&&h.field.blur()},100))),r(t,"pika-select"))l._c=!0;else{if(!e.preventDefault)return e.returnValue=!1,!1;e.preventDefault()}}},l._onChange=function(e){var t=(e=e||window.event).target||e.srcElement;t&&(r(t,"pika-select-month")?l.gotoMonth(t.value):r(t,"pika-select-year")&&l.gotoYear(t.value))},l._onKeyChange=function(e){if(e=e||window.event,l.isVisible())switch(e.keyCode){case 13:case 27:h.field&&h.field.blur();break;case 37:e.preventDefault(),l.adjustDate("subtract",1);break;case 38:l.adjustDate("subtract",7);break;case 39:l.adjustDate("add",1);break;case 40:l.adjustDate("add",7)}},l._onInputChange=function(n){var a;n.firedBy!==l&&(a=h.parse?h.parse(h.field.value,h.format):t?(a=e(h.field.value,h.format,h.formatStrict))&&a.isValid()?a.toDate():null:new Date(Date.parse(h.field.value)),u(a)&&l.setDate(a),l._v||l.show())},l._onInputFocus=function(){l.show()},l._onInputClick=function(){l.show()},l._onInputBlur=function(){var e=a.activeElement;do{if(r(e,"pika-single"))return}while(e=e.parentNode);l._c||(l._b=i(function(){l.hide()},50)),l._c=!1},l._onClick=function(e){var t=(e=e||window.event).target||e.srcElement,a=t;if(t){!n&&r(t,"pika-select")&&(t.onchange||(t.setAttribute("onchange","return;"),s(t,"change",l._onChange)));do{if(r(a,"pika-single")||a===h.trigger)return}while(a=a.parentNode);l._v&&t!==h.trigger&&a!==h.trigger&&l.hide()}},l.el=a.createElement("div"),l.el.className="pika-single"+(h.isRTL?" is-rtl":"")+(h.theme?" "+h.theme:""),s(l.el,"mousedown",l._onMouseDown,!0),s(l.el,"touchend",l._onMouseDown,!0),s(l.el,"change",l._onChange),h.keyboardInput&&s(a,"keydown",l._onKeyChange),h.field&&(h.container?h.container.appendChild(l.el):h.bound?a.body.appendChild(l.el):h.field.parentNode.insertBefore(l.el,h.field.nextSibling),s(h.field,"change",l._onInputChange),h.defaultDate||(t&&h.field.value?h.defaultDate=e(h.field.value,h.format).toDate():h.defaultDate=new Date(Date.parse(h.field.value)),h.setDefaultDate=!0));var d=h.defaultDate;u(d)?h.setDefaultDate?l.setDate(d,!0):l.gotoDate(d):l.gotoDate(new Date),h.bound?(this.hide(),l.el.className+=" is-bound",s(h.trigger,"click",l._onInputClick),s(h.trigger,"focus",l._onInputFocus),s(h.trigger,"blur",l._onInputBlur)):this.show()};return M.prototype={config:function(e){this._o||(this._o=m({},D,!0));var t=m(this._o,e,!0);t.isRTL=!!t.isRTL,t.field=t.field&&t.field.nodeName?t.field:null,t.theme="string"==typeof t.theme&&t.theme?t.theme:null,t.bound=!!(void 0!==t.bound?t.field&&t.bound:t.field),t.trigger=t.trigger&&t.trigger.nodeName?t.trigger:t.field,t.disableWeekends=!!t.disableWeekends,t.disableDayFn="function"==typeof t.disableDayFn?t.disableDayFn:null;var n=parseInt(t.numberOfMonths,10)||1;if(t.numberOfMonths=n>4?4:n,u(t.minDate)||(t.minDate=!1),u(t.maxDate)||(t.maxDate=!1),t.minDate&&t.maxDate&&t.maxDate<t.minDate&&(t.maxDate=t.minDate=!1),t.minDate&&this.setMinDate(t.minDate),t.maxDate&&this.setMaxDate(t.maxDate),d(t.yearRange)){var a=(new Date).getFullYear()-10;t.yearRange[0]=parseInt(t.yearRange[0],10)||a,t.yearRange[1]=parseInt(t.yearRange[1],10)||a}else t.yearRange=Math.abs(parseInt(t.yearRange,10))||D.yearRange,t.yearRange>100&&(t.yearRange=100);return t},toString:function(n){return n=n||this._o.format,u(this._d)?this._o.toString?this._o.toString(this._d,n):t?e(this._d).format(n):this._d.toDateString():""},getMoment:function(){return t?e(this._d):null},setMoment:function(n,a){t&&e.isMoment(n)&&this.setDate(n.toDate(),a)},getDate:function(){return u(this._d)?new Date(this._d.getTime()):null},setDate:function(e,t){if(!e)return this._d=null,this._o.field&&(this._o.field.value="",p(this._o.field,"change",{firedBy:this})),this.draw();if("string"==typeof e&&(e=new Date(Date.parse(e))),u(e)){var n=this._o.minDate,a=this._o.maxDate;u(n)&&e<n?e=n:u(a)&&e>a&&(e=a),this._d=new Date(e.getTime()),f(this._d),this.gotoDate(this._d),this._o.field&&(this._o.field.value=this.toString(),p(this._o.field,"change",{firedBy:this})),t||"function"!=typeof this._o.onSelect||this._o.onSelect.call(this,this.getDate())}},gotoDate:function(e){var t=!0;if(u(e)){if(this.calendars){var n=new Date(this.calendars[0].year,this.calendars[0].month,1),a=new Date(this.calendars[this.calendars.length-1].year,this.calendars[this.calendars.length-1].month,1),i=e.getTime();a.setMonth(a.getMonth()+1),a.setDate(a.getDate()-1),t=i<n.getTime()||a.getTime()<i}t&&(this.calendars=[{month:e.getMonth(),year:e.getFullYear()}],"right"===this._o.mainCalendar&&(this.calendars[0].month+=1-this._o.numberOfMonths)),this.adjustCalendars()}},adjustDate:function(e,t){var n,a=this.getDate()||new Date,i=24*parseInt(t)*60*60*1e3;"add"===e?n=new Date(a.valueOf()+i):"subtract"===e&&(n=new Date(a.valueOf()-i)),this.setDate(n)},adjustCalendars:function(){this.calendars[0]=y(this.calendars[0]);for(var e=1;e<this._o.numberOfMonths;e++)this.calendars[e]=y({month:this.calendars[0].month+e,year:this.calendars[0].year});this.draw()},gotoToday:function(){this.gotoDate(new Date)},gotoMonth:function(e){isNaN(e)||(this.calendars[0].month=parseInt(e,10),this.adjustCalendars())},nextMonth:function(){this.calendars[0].month++,this.adjustCalendars()},prevMonth:function(){this.calendars[0].month--,this.adjustCalendars()},gotoYear:function(e){isNaN(e)||(this.calendars[0].year=parseInt(e,10),this.adjustCalendars())},setMinDate:function(e){e instanceof Date?(f(e),this._o.minDate=e,this._o.minYear=e.getFullYear(),this._o.minMonth=e.getMonth()):(this._o.minDate=D.minDate,this._o.minYear=D.minYear,this._o.minMonth=D.minMonth,this._o.startRange=D.startRange),this.draw()},setMaxDate:function(e){e instanceof Date?(f(e),this._o.maxDate=e,this._o.maxYear=e.getFullYear(),this._o.maxMonth=e.getMonth()):(this._o.maxDate=D.maxDate,this._o.maxYear=D.maxYear,this._o.maxMonth=D.maxMonth,this._o.endRange=D.endRange),this.draw()},setStartRange:function(e){this._o.startRange=e},setEndRange:function(e){this._o.endRange=e},draw:function(e){if(this._v||e){var t,n=this._o,a=n.minYear,s=n.maxYear,o=n.minMonth,r=n.maxMonth,l="";this._y<=a&&(this._y=a,!isNaN(o)&&this._m<o&&(this._m=o)),this._y>=s&&(this._y=s,!isNaN(r)&&this._m>r&&(this._m=r)),t="pika-title-"+Math.random().toString(36).replace(/[^a-z]+/g,"").substr(0,2);for(var h=0;h<n.numberOfMonths;h++)l+='<div class="pika-lendar">'+_(this,h,this.calendars[h].year,this.calendars[h].month,this.calendars[0].year,t)+this.render(this.calendars[h].year,this.calendars[h].month,t)+"</div>";this.el.innerHTML=l,n.bound&&"hidden"!==n.field.type&&i(function(){n.trigger.focus()},1),"function"==typeof this._o.onDraw&&this._o.onDraw(this),n.bound&&n.field.setAttribute("aria-label",n.ariaLabel)}},adjustPosition:function(){var e,t,n,i,s,o,r,d,u,c,f,g;if(!this._o.container){if(this.el.style.position="absolute",this.el.style.left=0,this.el.style.top="71px",t=e=this._o.trigger,n=this.el.offsetWidth,i=this.el.offsetHeight,s=window.innerWidth||a.documentElement.clientWidth,o=window.innerHeight||a.documentElement.clientHeight,r=window.pageYOffset||a.body.scrollTop||a.documentElement.scrollTop,f=!0,g=!0,"function"==typeof e.getBoundingClientRect)d=(c=e.getBoundingClientRect()).left+window.pageXOffset,u=c.bottom+window.pageYOffset;else for(d=t.offsetLeft,u=t.offsetTop+t.offsetHeight;t=t.offsetParent;)d+=t.offsetLeft,u+=t.offsetTop;(this._o.reposition&&d+n>s||this._o.position.indexOf("right")>-1&&d-n+e.offsetWidth>0)&&(d=d-n+e.offsetWidth,f=!1),(this._o.reposition&&u+i>o+r||this._o.position.indexOf("top")>-1&&u-i-e.offsetHeight>0)&&(u=u-i-e.offsetHeight,g=!1),l(this.el,f?"left-aligned":"right-aligned"),l(this.el,g?"bottom-aligned":"top-aligned"),h(this.el,f?"right-aligned":"left-aligned"),h(this.el,g?"top-aligned":"bottom-aligned")}},render:function(e,t,n){var a=this._o,i=new Date,s=c(e,t),o=new Date(e,t,1).getDay(),r=[],l=[];f(i),a.firstDay>0&&(o-=a.firstDay)<0&&(o+=7);for(var h=0===t?11:t-1,d=11===t?0:t+1,m=0===t?e-1:e,p=11===t?e+1:e,y=c(m,h),D=s+o,v=D;v>7;)v-=7;D+=7-v;for(var _,M,k,x,R,N,S,C=!1,I=0,T=0;I<D;I++){var E=new Date(e,t,I-o+1),Y=!!u(this._d)&&g(E,this._d),O=g(E,i),j=-1!==a.events.indexOf(E.toDateString()),W=I<o||I>=s+o,A=I-o+1,F=t,L=e,P=a.startRange&&g(a.startRange,E),B=a.endRange&&g(a.endRange,E),H=a.startRange&&a.endRange&&a.startRange<E&&E<a.endRange,V=a.minDate&&E<a.minDate||a.maxDate&&E>a.maxDate||a.disableWeekends&&(void 0,0===(S=E.getDay())||6===S)||a.disableDayFn&&a.disableDayFn(E);W&&(I<o?(A=y+A,F=h,L=m):(A-=s,F=d,L=p));var J={day:A,month:F,year:L,hasEvent:j,isSelected:Y,isToday:O,isDisabled:V,isEmpty:W,isStartRange:P,isEndRange:B,isInRange:H,showDaysInNextAndPreviousMonths:a.showDaysInNextAndPreviousMonths,enableSelectionDaysInNextAndPreviousMonths:a.enableSelectionDaysInNextAndPreviousMonths};a.pickWholeWeek&&Y&&(C=!0),l.push(b(J)),7==++T&&(a.showWeekNumber&&l.unshift((k=I-o,x=t,R=e,N=void 0,N=new Date(R,0,1),'<td class="pika-week">'+Math.ceil(((new Date(R,x,k)-N)/864e5+N.getDay()+1)/7)+"</td>")),r.push((_=l,M=a.isRTL,'<tr class="pika-row'+(a.pickWholeWeek?" pick-whole-week":"")+(C?" is-selected":"")+'">'+(M?_.reverse():_).join("")+"</tr>")),l=[],T=0,C=!1)}return w(a,r,n)},isVisible:function(){return this._v},show:function(){this.isVisible()||(this._v=!0,this.draw(),h(this.el,"is-hidden"),this._o.bound&&(s(a,"click",this._onClick),this.adjustPosition()),"function"==typeof this._o.onOpen&&this._o.onOpen.call(this))},hide:function(){var e=this._v;!1!==e&&(this._o.bound&&o(a,"click",this._onClick),this.el.style.position="static",this.el.style.left="auto",this.el.style.top="auto",l(this.el,"is-hidden"),this._v=!1,void 0!==e&&"function"==typeof this._o.onClose&&this._o.onClose.call(this))},destroy:function(){var e=this._o;this.hide(),o(this.el,"mousedown",this._onMouseDown,!0),o(this.el,"touchend",this._onMouseDown,!0),o(this.el,"change",this._onChange),e.keyboardInput&&o(a,"keydown",this._onKeyChange),e.field&&(o(e.field,"change",this._onInputChange),e.bound&&(o(e.trigger,"click",this._onInputClick),o(e.trigger,"focus",this._onInputFocus),o(e.trigger,"blur",this._onInputBlur))),this.el.parentNode&&this.el.parentNode.removeChild(this.el)}},M});
+  </script>
+{% endif %}
+<div id="wpdNetOverlay"></div>
+<div id="wpdNetMainContainer">
+  <div id="wpdNetHeaderWrapper">
+    <span id="wpdNetTitle">{{ shop.metafields.wcp_net.netConfMsg }}</span>
+    <div id="wpdCloseNetPopup">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><g clip-path="url(#clip0_2267_189)"><path d="M18.3 5.71022C17.91 5.32022 17.28 5.32022 16.89 5.71022L12 10.5902L7.10997 5.70021C6.71997 5.31021 6.08997 5.31021 5.69997 5.70021C5.30997 6.09021 5.30997 6.72022 5.69997 7.11022L10.59 12.0002L5.69997 16.8902C5.30997 17.2802 5.30997 17.9102 5.69997 18.3002C6.08997 18.6902 6.71997 18.6902 7.10997 18.3002L12 13.4102L16.89 18.3002C17.28 18.6902 17.91 18.6902 18.3 18.3002C18.69 17.9102 18.69 17.2802 18.3 16.8902L13.41 12.0002L18.3 7.11022C18.68 6.73022 18.68 6.09022 18.3 5.71022Z" fill="black" fill-opacity="0.5"/></g><defs><clipPath id="clip0_2267_189"><rect width="24" height="24" fill="white"/></clipPath></defs></svg>
+    </div>
+  </div>
+  <div id='wpdNetContentWrapper'>           
+      <form id="wpdNetLeftContent">                
+          <div id='wpdExtraFieldsWrapper'>
+              {% if shop.metafields.wcp_net.isPayment == 'true' or shop.metafields.wcp_net.isPayment == '1' %}
+              {% if shop.metafields.wcp_net.Payment !='' %}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>Net Term Option</label>
+                  <select id="wpdNetPayment" data-default="select" required class="wpd-primary-text-color">
+                      {% assign optionsLists = shop.metafields.wcp_net.Payment | split: ',' %}
+                      <option value="-1">Select Payment Option</option>
+                      {% for optionsList in optionsLists %}
+                      <option value="{{ optionsList }}">{{ optionsList }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+              {% endif %}
+              {% endif %}
+
+              {% if shop.metafields.wcp_net.isdisplayPONo == 'true'  or shop.metafields.wcp_net.isdisplayPONo == '1'%}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>Purchase Order Number</label>
+                  <input type="text" id="wpdNetPoNumber" class="wpd-primary-text-color" value="" placeholder="Enter Purchase Order Number">
+              </div>
+              {% endif %}
+
+              {% if shop.metafields.wcp_net.isdisplayUPSNo == 'true'  or shop.metafields.wcp_net.isdisplayUPSNo == '1'%}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>UPS Shipping Account Number</label>
+                  <input type="text" id="wpdNetUpsNumber" class="wpd-primary-text-color" value="" placeholder="Enter UPS Shipping Account Number">
+              </div>
+              {% endif %}
+
+              {% if shop.metafields.wcp_net.isdisplayDate == 'true'  or shop.metafields.wcp_net.isdisplayDate == '1'%}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>Delivery Date</label>
+                  <input placeholder="Select Delivery Date *" class="wpd-primary-text-color" type="text" placholder='*' id="wpdNetDeliveryDate" readonly>
+              </div>
+              {% endif %}
+
+              {% if shop.metafields.wcp_net.isDisplayBillingEmail == 'true'  or shop.metafields.wcp_net.isDisplayBillingEmail == '1'%}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>Billing Email</label>
+                  <input type="text" id='wpdNetBillingEmail' class="wpd-primary-text-color" value="" placeholder="Enter Billing Email *">
+              </div>
+              {% endif %}
+
+              {% if shop.metafields.wcp_net.isdisplayShippingInst == 'true'  or shop.metafields.wcp_net.isdisplayShippingInst == '1'%}
+              <div class='wpd-extra-field wpd-secondary-text-color'>
+                  <label>Shipping Instructions</label>
+                  <input type="text" id="wpdNetShippingInstructions" class="wpd-primary-text-color" placeholder="Enter Shipping Instructions" />
+              </div>
+              {% endif %}
+          </div>
+          <div class='wpd-extra-field wpd-secondary-text-color'>
+              <label>Shipping Notes</label>
+              <textarea id="wpdNetShippingNotes" class="net-notes wpd-primary-text-color" placeholder="Shipping Notes" rows="5"></textarea>
+          </div>
+          
+          <div id="wpdShippingAddressWrapper">
+              <div id="wpdShippingAddressHeader" class="wpd-primary-text-color">Shipping Address</div> 
+              <div id='wpdShippingFieldsWrapper'>    
+                  <div id="wpdCustomerSavedAddressWrapper" {% if customer.addresses.size == 1 %}style="display:none" {% endif %}>
+                      <label class="wpd-secondary-text-color">Available Shipping address</label>             
+                      <select id='wpdNetAddressSelector' onchange="ChangeAddress()" class="wpd-primary-text-color">
+                          {% paginate customer.addresses by 200 %} {% for address in customer.addresses %}
+                          <option {% if address.id == customer.default_address.id %} selected {% endif %}
+                              value="{{ address.id }}">Address : {{ address.city }} : {{ address.address1 | truncate: 40 }}
+                          </option>
+                          {% endfor %}
+                          {% endpaginate %}
+                      </select>
+                  </div>
+                  <div {% if customer.addresses.size == 1 %}style="display:none"{% else %}style="display:block"{% endif %}></div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">First name</label>
+                      <input type="text" id="wpdNetShippingAddressFirstName" name="wpdNetShippingAddress[first_name]" class="wpd-primary-text-color" value="{{ customer.default_address.first_name }}" placeholder="First Name *" required>
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Last name</label>
+                      <input type="text" id="wpdNetShippingAddressLastName" name="wpdNetShippingAddress[last_name]" class="wpd-primary-text-color" value="{{ customer.default_address.last_name }}" placeholder="Last Name *" required>
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Company</label>
+                      <input type="text" id="wpdNetShippingAddressCompany" name="wpdNetShippingAddress[company]" class="wpd-primary-text-color" value="{{ customer.default_address.company }}" placeholder="Company">
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Contact number</label>
+                      <input type="text" id="wpdNetShippingAddressPhone" name="wpdNetShippingAddress[phone]" class="wpd-primary-text-color" value="{{ customer.default_address.phone }}" placeholder="Phone">
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Address line 1</label>
+                      <input type="text" id="wpdNetShippingAddressAddress1" name="wpdNetShippingAddress[address1]" class="wpd-primary-text-color" value="{{ customer.default_address.address1 }}" placeholder="Address *" required>
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Address line 2</label>
+                      <input type="text" id="wpdNetShippingAddressAddress2" name="wpdNetShippingAddress[address2]" class="wpd-primary-text-color" value="{{ customer.default_address.address2 }}" placeholder="Apartment, suite, etc.">
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">City</label>
+                      <input type="text" id="wpdNetShippingAddressCity" name="wpdNetShippingAddress[city]" class="wpd-primary-text-color" value="{{ customer.default_address.city }}" placeholder="City *" required>
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">Country</label>
+                      <select id="wpdNetShippingAddressCountry" name="wpdNetShippingAddress[country]" class="wpd-primary-text-color" data-default="{{ customer.default_address.country }}">{{ country_option_tags }}</select>
+                  </div>
+                  <div class="wpd-shipping-field-wrapper" style="display:none" id="wpdNetShippingAddressProvinceContainer">
+                      <label class="wpd-secondary-text-color">State/Province</label>
+                      <select id="wpdNetShippingAddressProvince" name="wpdNetShippingAddress[province]" class="wpd-primary-text-color" data-default="{{ customer.default_address.province }}"></select>                            
+                  </div>
+                  <div class="wpd-shipping-field-wrapper">
+                      <label class="wpd-secondary-text-color">ZIP/Postal code</label>
+                      <input type="text" id="wpdNetShippingAddressZip" name="wpdNetShippingAddress[zip]" class="wpd-primary-text-color" value="{{ customer.default_address.zip }}" placeholder="ZIP/Postal code *" autocapitalize="characters" required>                                    
+                  </div>
+              </div>                    
+          </div>
+          {% if shop.metafields.wcp_net.isNetShippingsCost == "2" %}
+          <div id="wpdShippingRateWrapper">
+              <div id="wpdShippingRateHeader" class="wpd-primary-text-color">Shipping Rates</div>
+              <div id="wpdShippingRateContainer">
+                <button id="wpdFetchShippingRates" type="button">
+                  <svg viewBox="0 0 20 20" id="wpdShippingSvgIcon">
+                    <path fill-rule="evenodd" d="M1.5 2a1.5 1.5 0 0 0-1.5 1.5v11a1.5 1.5 0 0 0 1.5 1.5h.5a3 3 0 1 0 6 0h4a3 3 0 1 0 6 0h.5a1.5 1.5 0 0 0 1.5-1.5v-3.361a1.5 1.5 0 0 0-.214-.772l-2.783-4.639a1.5 1.5 0 0 0-1.286-.728h-2.717v-1.5a1.5 1.5 0 0 0-1.5-1.5h-10zm13.5 15a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm-11-1a1 1 0 1 0 2 0 1 1 0 0 0-2 0zm13.234-6h-4.234v-3h2.434l1.8 3z"></path>
+                  </svg>
+                  <span>Fetch shipping rates</span>
+                </button>
+                <div id="wpdNetShippingSelectWrapper" class="wpd-disable">
+                  <label for="wpdShippingRates" id="wpdNetShippingSelectLabel">Choose shipping rates</label>
+                  <select id="wpdShippingRates"><option value="-1">Choose shipping rates</option></select>
+                </div>
+              </div>
+          </div>
+          {% endif %}
+          <div id="wpdBillingAddressWrapper">
+              <div id="wpdBillingAddressHeader" class="wpd-primary-text-color">Billing Address</div> 
+                  <div id="wpdSameBillingAddressWrapper" class="wpd-primary-text-color">
+                      <input type="checkbox" checked id="wpdSameBillingAddress" value="billing" onchange="billingAddressManager()">
+                      <label for="wpdSameBillingAddress">Billing address is the same as shipping address</label>
+                  </div>                    
+                  <div id='wpdBillingFieldsWrapper'>                            
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">First name</label>
+                          <input type="text" id="wpdNetBillingAddressFirstName" name="wpdNetBillingAddress[first_name]" class="wpd-primary-text-color" value="{{ customer.default_address.first_name }}" placeholder="First Name *">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Last name</label>
+                          <input type="text" id="wpdNetBillingAddressLastName" name="wpdNetBillingAddress[last_name]" class="wpd-primary-text-color" value="{{ customer.default_address.last_name }}" placeholder="Last Name *">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Company</label>
+                          <input type="text" id="wpdNetBillingAddressCompany" name="wpdNetBillingAddress[company]" class="wpd-primary-text-color" value="{{ customer.default_address.company }}" placeholder="Company">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Contact number</label>
+                          <input type="text" id="wpdNetBillingAddressPhone" name="wpdNetBillingAddress[phone]" class="wpd-primary-text-color" value="{{ customer.default_address.phone }}" placeholder="Phone">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Address line 1</label>
+                          <input type="text" id="wpdNetBillingAddressAddress1" name="wpdNetBillingAddress[address1]" class="wpd-primary-text-color" value="{{ customer.default_address.address1 }}" placeholder="Address *">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Address line 2</label>
+                          <input type="text" id="wpdNetBillingAddressAddress2" name="wpdNetBillingAddress[address2]" class="wpd-primary-text-color" value="{{ customer.default_address.address2 }}" placeholder="Apartment, suite, etc.">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">City</label>
+                          <input type="text" id="wpdNetBillingAddressCity" name="wpdNetBillingAddress[city]" class="wpd-primary-text-color" value="{{ customer.default_address.city }}" placeholder="City *">
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">Country</label>
+                          <select id="wpdNetBillingAddressCountry" name="wpdNetBillingAddress[country]" class="wpd-primary-text-color" data-default="{{ customer.default_address.country }}">{{ country_option_tags }}</select>
+                      </div>
+                      <div class="wpd-billing-field-wrapper" style="display:none" id="wpdNetBillingAddressProvinceContainer">
+                          <label class="wpd-secondary-text-color">State/Province</label>
+                          <select id="wpdNetBillingAddressProvince" name="wpdNetBillingAddress[province]" class="wpd-primary-text-color" data-default="{{ customer.default_address.province }}"></select>                                
+                      </div>
+                      <div class="wpd-billing-field-wrapper">
+                          <label class="wpd-secondary-text-color">ZIP/Postal code</label>
+                          <input type="text" id="wpdNetBillingAddressZip" name="wpdNetBillingAddress[zip]" class="wpd-primary-text-color" value="{{ customer.default_address.zip }}" placeholder="ZIP/Postal code *" autocapitalize="characters">
+                      </div>                            
+                  </div>
+          </div>
+      </form>
+      <div id="wpdNetRightContent">
+          <div id="wpdOrderHeader" class="wpd-primary-text-color">Order summary</div>
+          <div id="wpdNetCartItemsWrapper">
+              {% assign wcp_total_price = 0 %}
+              {% for item in cart.items %}
+              {% include 'wcp_discount' with item.product %}
+              {% include 'wcp_variant' with item.variant %}
+              {% include 'wcp_vd_discount' with item %}
+              {% if set_price or wcp_discount_value < 1 or p_discount_value == 0 %}
+              {% if wcp_v_price > item.final_price %}
+              {% assign wcp_v_price = item.final_price %}
+              {% endif %}
+              {% if wcp_v_price > item.discounted_price %}
+              {% assign wcp_v_price = item.discounted_price %}
+              {% endif %}
+              {% endif %}
+              {% assign wcp_line_price = item.quantity | times: wcp_v_price  %}
+              {% assign wcp_total_price = wcp_total_price | plus:wcp_line_price  %}
+              <div class="wpd-net-cart-item">     
+                  <span class="wpd-net-cart-item-quantity wpd-primary-text-color">{{ item.quantity }} x</span>
+                  <div class="wpd-net-cart-item-image-wrapper">
+                    <img class="wpd-net-cart-item-image" src="{{ item | img_url: 'small' }}" />
+                  </div>
+                  <div class="wpd-net-cart-item-info-wrapper">
+                      <span class="wpd-net-cart-item-title wpd-primary-text-color">{{ item.product.title }}</span>
+                      {% unless item.variant.title contains 'Default' %}<span class="wpd-net-cart-item-variant-title wpd-secondary-text-color">{{ item.variant.title }}</span>{% endunless %}
+                      <span class="wpd-net-cart-item-price wpd-primary-text-color">{{ wcp_line_price | money }}</span>
+                  </div>                                                           
+              </div>                        
+              {% endfor %}                                         
+          </div>
+          <div id="wpdNetDiscountCodeWrapper">
+            <span id="wpdNetDiscountCodeHeader">Discount coupon</span>
+            <div id="wpdNetCorrectDiscountCodeWrapper">
+              <span id="wpdNetCorrectDiscountCodeText"></span>
+              <svg id="wpdNetRemoveDiscountCode" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M9.13135 7.99991L12.5658 4.56551C12.8786 4.25271 12.8786 3.74711 12.5658 3.43431C12.253 3.12151 11.7474 3.12151 11.4346 3.43431L8.00015 6.86871L4.56575 3.43431C4.25295 3.12151 3.74735 3.12151 3.43455 3.43431C3.12175 3.74711 3.12175 4.25271 3.43455 4.56551L6.86895 7.99991L3.43455 11.4343C3.12175 11.7471 3.12175 12.2527 3.43455 12.5655C3.59055 12.7215 3.79535 12.7999 4.00015 12.7999C4.20495 12.7999 4.40975 12.7215 4.56575 12.5655L8.00015 9.13111L11.4346 12.5655C11.5906 12.7215 11.7954 12.7999 12.0002 12.7999C12.205 12.7999 12.4097 12.7215 12.5658 12.5655C12.8786 12.2527 12.8786 11.7471 12.5658 11.4343L9.13135 7.99991Z" fill="#008060"/></svg>
+            </div>
+            <div id="wpdNetDiscountCodeFieldsWrapper">
+              <input type="text" id="wpdNetDiscountCodeTxt" placeholder="Enter coupon code" />
+              <button id="wpdNetDiscountCodeBtn">
+                <div class="wpd-loader-wrapper"><div class="wpd-show-loader-spinner"></div></div>                
+                <span class="wpd-button-text"><span class="wpd-loader-button-label">Apply</span></span>
+              </button>
+            </div>
+            
+          </div>
+          <div id="wpdNetCartFooter">
+              <div id="wpdNetCartTotalInfoWrapper">
+                  <div id="wpdNetShippingNote"></div>
+                  <div class="wpd-net-cart-total-info-items wpd-secondary-text-color">
+                      <span>Order value</span>
+                      <span>{{wcp_total_price | money}}</span>
+                  </div>
+                  <div class="wpd-net-cart-total-info-items wpd-secondary-text-color" id="wpdShippingChargeWrapper">
+                      <span>Shipping charges</span>
+                      <span id="wpdNetShippingChargeValue"></span>
+                  </div>
+                  <div id="wpdApplyDiscountWrapper" class="wpd-net-cart-total-info-items wpd-secondary-text-color">
+                      <span>Coupon</span>
+                      <span id="wpdNetDiscountCodeValue">Apply coupon</span>
+                  </div>
+                  <div id="wpdDiscountCodeSuccessTagWrapper" class="wpd-net-cart-total-info-items">
+                      <div>
+                          <span id="wpd_success_discount_code"></span>
+                          <span id="wpd_remove_discount_code">Remove</span>
+                      </div>
+                      <span id="wpd_discount_code_value"></span>
+                  </div>
+              </div>
+              <div id="wpdNetCartTotalWrapper" class="wpd-primary-text-color">
+                  <span>Total amount</span>
+                  <div id="wpdNetCartTotalValueWrapper">
+                      <span id="wpdNetCrossOutTotalValue"></span>
+                      <span id="wpdNetTotalValue"></span>
+                  </div>
+              </div>                    
+          </div>
+      </div>
+  </div>
+  <form id="wpdNetMainForm">
+    <button id="wpdNetPlaceOrder" type="submit" class="wpd-primary-button">
+      <div class="wpd-loader-wrapper"><div class="wpd-show-loader-spinner"></div></div>                
+      <span class="wpd-button-text"><span class="wpd-loader-button-label">Place Order</span></span>
+    </button>
+  </form>
+  <div id="wpdNetOrderSuccessWrapper">
+    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48" fill="none">
+      <g clip-path="url(#clip0_2326_351)">
+        <path d="M42.58 11.7799L22.58 31.7799C21.8 32.5599 20.54 32.5599 19.76 31.7799L14.1 26.1199C13.32 25.3399 13.32 24.0799 14.1 23.2999C14.88 22.5199 16.14 22.5199 16.92 23.2999L21.16 27.5399L39.74 8.95992C40.52 8.17992 41.78 8.17992 42.56 8.95992C43.36 9.73992 43.36 10.9999 42.58 11.7799ZM31.54 5.47992C28.16 4.09992 24.32 3.61992 20.32 4.33992C12.18 5.79992 5.67995 12.3599 4.29995 20.4999C2.01995 33.9999 13.26 45.5599 26.68 43.8199C34.6 42.7999 41.24 36.8999 43.32 29.1999C44.12 26.2599 44.2 23.4199 43.74 20.7599C43.48 19.1599 41.5 18.5399 40.34 19.6799C39.88 20.1399 39.68 20.8199 39.8 21.4599C40.24 24.1199 40.04 26.9599 38.76 29.9799C36.44 35.3999 31.4 39.3799 25.54 39.9199C15.34 40.8599 6.87995 32.2199 8.13995 21.9599C8.99995 14.8799 14.7 9.11992 21.76 8.13992C25.22 7.65992 28.5 8.31992 31.3 9.75992C32.08 10.1599 33.02 10.0199 33.64 9.39992C34.6 8.43992 34.36 6.81992 33.16 6.19992C32.62 5.95992 32.08 5.69992 31.54 5.47992Z" fill="#008060"/>
+      </g>
+      <defs>
+        <clipPath id="clip0_2326_351">
+          <rect width="48" height="48" fill="white"/>
+        </clipPath>
+      </defs>
+    </svg>
+    <span id="wpdNetOrderSuccessMsg"></span>
+  </div>
+</div>
+
+<script> 
+  if(typeof wpdNetVersion != undefined){
+    wpdNetVersion = 2;      
+  }else{
+    var wpdNetVersion = 2;
+  }
+  {% capture output %} [{% paginate customer.addresses by 200 %}{% for address in customer.addresses %}{{address | json}}{% unless forloop.last %},{% endunless %}{% endfor %}{% endpaginate %}]{% endcapture %}
+  
+  function ChangeAddress() {
+    var Addresslist={{output}};    
+    var x = document.getElementById("wpdNetAddressSelector").value;
+    var selectedaddress=Addresslist.find(i=>i.id==x);
+    	document.querySelector("#wpdNetShippingAddressFirstName").value = selectedaddress.first_name;
+     	document.querySelector("#wpdNetShippingAddressLastName").value = selectedaddress.last_name;
+      	document.querySelector("#wpdNetShippingAddressCompany").value = selectedaddress.company;
+      	document.querySelector("#wpdNetShippingAddressAddress1").value = selectedaddress.address1;
+      	document.querySelector("#wpdNetShippingAddressAddress2").value = selectedaddress.address2;
+       	document.querySelector("#wpdNetShippingAddressCity").value = selectedaddress.city;
+      	document.querySelector("#wpdNetShippingAddressProvince").value = selectedaddress.province;
+      	document.querySelector("#wpdNetShippingAddressCountry").value = selectedaddress.country;
+      	document.querySelector("#wpdNetShippingAddressZip").value = selectedaddress.zip;
+      	document.querySelector("#wpdNetShippingAddressPhone").value = selectedaddress.phone; 
+  }
+      
+  function billingAddressManager()
+  {
+    if (document.getElementById('wpdSameBillingAddress').checked) 
+    {
+      document.getElementById('wpdBillingFieldsWrapper').style.display='none';    
+      document.querySelector("#wpdNetBillingAddressFirstName").removeAttribute('required');
+      document.querySelector("#wpdNetBillingAddressLastName").removeAttribute('required');
+      document.querySelector("#wpdNetBillingAddressAddress1").removeAttribute('required');
+      document.querySelector("#wpdNetBillingAddressCity").removeAttribute('required');
+      document.querySelector("#wpdNetBillingAddressZip").removeAttribute('required');
+      
+    } else {
+        document.getElementById('wpdBillingFieldsWrapper').style.display='grid';    
+        document.querySelector("#wpdNetBillingAddressFirstName").setAttribute('required', '');
+        document.querySelector("#wpdNetBillingAddressLastName").setAttribute('required', '');
+        document.querySelector("#wpdNetBillingAddressAddress1").setAttribute('required', '');
+        document.querySelector("#wpdNetBillingAddressCity").setAttribute('required', '');
+        document.querySelector("#wpdNetBillingAddressZip").setAttribute('required', '');
+    }
+  }
+  
+  document.addEventListener('DOMContentLoaded', function(){
+    new Shopify.CountryProvinceSelector('wpdNetBillingAddressCountry', 'wpdNetBillingAddressProvince',{ hideElement: 'wpdNetBillingAddressProvinceContainer' });
+    new Shopify.CountryProvinceSelector('wpdNetShippingAddressCountry', 'wpdNetShippingAddressProvince',{ hideElement: 'wpdNetShippingAddressProvinceContainer' });
+  });
+    
+    {% if shop.metafields.wcp_net.isNetShippingsCost == "2" %} 
+      window.WPDFormValid = false;
+      window.WPDRatesFound = false;
+      window.wpdMoneyFormat = '{{ shop.money_format }}';
+      document.getElementById("wpdFetchShippingRates").addEventListener("click", function(event) {
+        this.disabled = true;
+        this.style.opacity = 0.5;
+        wpdPrepareShippingRates();
+        let asyncCallCounter = 0;
+        fetchRatesInterval = setInterval(() => {
+          if (window.WPDFormValid && !window.WPDRatesFound) {
+            if(asyncCallCounter > 5 && (window.fetchRateCallCount == undefined ||  window.fetchRateCallCount < 5) ){
+              if(window.fetchRateCallCount == undefined){
+                window.fetchRateCallCount = 0;
+              }else{
+                window.fetchRateCallCount++;
+              }
+              clearInterval( fetchRatesInterval );
+              this.click();
+              return;
+            }
+            wpdAsyncShippingRates();
+            asyncCallCounter++;
+          }
+        }, 500);
+      });
+      function wpdGetNetOrderAddress() {
+        const formElement = document.querySelector("#wpdNetLeftContent");        
+        const formData = new FormData(formElement);
+        const shippingFormData = Array.from(formData).filter(
+          (data) => data[0].includes("wpdNetShippingAddress")
+        );
+    
+        return new URLSearchParams(shippingFormData).toString();
+      }
+  
+      function wpdGetShippingAddress() {
+        const wcpAddress = wpdGetNetOrderAddress();
+        return wcpAddress.replaceAll("wpdNetShippingAddress", "shipping_address");
+      }
+      
+      function wpdPrepareShippingRates() {
+        const shippingAddress = wpdGetShippingAddress();
+        fetch(`/cart/prepare_shipping_rates.json?${shippingAddress}`, {
+          method: "POST",
+        }).then(async (r) => {
+          document.getElementById("wpdFetchShippingRates").disabled = false;        
+          document.getElementById("wpdFetchShippingRates").style.opacity = 1;
+          document.getElementById("wpdNetShippingSelectWrapper").classList.remove("wpd-disable");          
+          if (r.status === 422) {
+            const json = await r.json();
+              document.getElementById("wpdShippingRates").innerHTML = `<option>${Object.values(
+              json
+            )
+              .map((err) => err[0])
+              .join("</option><option>")}</option>`;
+          }
+    
+          if (r.status === 202) {
+            window.WPDFormValid = true;
+            window.WPDRatesFound = false;
+          }
+        });
+      }
+  
+      function wpdAsyncShippingRates() {
+        const shippingAddress = wpdGetShippingAddress();
+        fetch(`/cart/async_shipping_rates.json?${shippingAddress}`).then(
+          async (r) => {
+            if (r.status === 200) {
+              window.WPDRatesFound = true;
+              const json = await r.json();
+              if (!json || !json.shipping_rates.length) {
+                document.getElementById("wpdShippingRates").innerHTML = `<option>-- No eligible shipping methods found --</option>`;
+                return;
+              }
+    
+              document.getElementById("wpdShippingRates").innerHTML = `<option>-- Choose shipping rates --</option>`;
+    
+              json.shipping_rates.map((rate) => {
+                const option = document.createElement("option");
+                option.value = `${rate.presentment_name}:${rate.price}`;
+                option.setAttribute("data-rate",`${rate.price}`);
+                option.setAttribute("data-name",`${rate.presentment_name}`);
+                option.innerHTML = `${rate.presentment_name} @${wpdFormatAmount(
+                  rate.price
+                )}`;
+                document.getElementById("wpdShippingRates").appendChild(option);
+              });
+            }else if( r.status !== 202){
+              document.getElementById("wpdShippingRates").innerHTML = `<option>-- No eligible shipping methods found --</option>`;
+            }
+          }
+        );
+      }
+      function wcpAddShippingToWcpData(event) {
+        const selectedShipping = event.target.value;
+        if (!selectedShipping) {
+          wcpClearIntegrationShipping();
+          return;
+        }
+    
+        let selectedOption = event.target.options[event.target.selectedIndex];        
+        const title = selectedOption.getAttribute("data-name");
+        const price = selectedOption.getAttribute("data-rate");
+        if (title == null || price == null) {
+          wcpClearIntegrationShipping();
+          return;
+        }
+    
+        if (!window.wcp_data) {
+          return;
+        }
+        window.wcp_data.integrationShipping = {title,price};
+      }
+      function wcpClearIntegrationShipping() {
+        try {
+          delete window.wcp_data.integrationShipping;
+        } catch (e) {}
+      }
+      function wpdFormatAmount(amount){
+        return window.wpdMoneyFormat.replace("{% raw %}{{amount}}{% endraw %}",amount);
+      }
+      document.getElementById("wpdShippingRates").addEventListener("change",wcpAddShippingToWcpData);
+    {% endif %}
+</script>
+                
+  {% if shop.metafields.wcp_net.isdisplayDate == 'true' or shop.metafields.wcp_net.isdisplayDate == '1' %}
+<script>
+     var ua = window.navigator.userAgent;
+     if (ua.indexOf("MSIE") > 0 || ua.indexOf("Edge") > 0 || ua.match(/Trident\/7.0/)) // If Internet Explorer, return version number
+    {
+      document.getElementById('wpdNetDeliveryDate').removeAttribute('readonly');
+      document.getElementById('wpdNetDeliveryDate').placeholder='Enter a delivery date. Example: ' + new Date().toString().substring(0,15);
+    }else{
+      var field = document.getElementById('wpdNetDeliveryDate');
+      var picker = new Pikaday({
+        field: document.getElementById('wpdNetDeliveryDate'),
+        minDate: new Date(),
+      });
+      field.parentNode.append(picker.el,'');
+    }
+</script>
+{% endif %}

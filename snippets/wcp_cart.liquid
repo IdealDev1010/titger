@@ -1,0 +1,1140 @@
+{% if shop.metafields.wcp_status.wcp_status != 'disabled' and cart.item_count > 0 and customer.tags.size > 0 %}
+<style>  #wcp-discount-code{  margin-right: 10px;  }  .DiscointCodeSuccess{  	color:#006400;  }  .DiscointCodeInvalid{  color:#8b0000;  }</style>
+
+<script>
+ //var domain = "https://wholesalehelper.io/wpd/root.php?f=";
+ //var domain ="https://"+ window.location.host+"/apps/wpdapp/root.php?f=";
+ var Wpd_domain = "";
+ var draftAPIRequestProcessing = false;
+ if(window.wpd_domain_url == "" || typeof(window.wpd_domain_url) == "undefined"){   
+    Wpd_domain = "https://"+ window.location.host+"/apps/wpdapp/api/";
+  }else{
+    Wpd_domain = window.wpd_domain_url;
+  }
+var wpdNetVersion = 1;
+(function(window, document) {"use strict";
+
+function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + "; " + expires + "; path=/;";
+}
+
+function getCookie(cname) {
+  var name = cname + "=";
+  var ca = document.cookie.split(';');
+  for(var i = 0; i <ca.length; i++) {
+    var c = ca[i];
+    while (c.charAt(0)==' ') {
+        c = c.substring(1);
+    }
+    if (c.indexOf(name) == 0) {
+        return c.substring(name.length,c.length);
+    }
+  }
+  return "";
+}
+
+function reqJquery(onload) {
+  if(typeof jQuery === 'undefined' || (parseInt(jQuery.fn.jquery) === 1 && parseFloat(jQuery.fn.jquery.replace(/^1\./,'')) < 10)  || typeof jQuery.ajax === 'undefined'){
+    var head = document.getElementsByTagName('head')[0];
+    var script = document.createElement('script');
+    script.src = ('https:' == document.location.protocol ? 'https://' : 'http://') + 'ajax.googleapis.com/ajax/libs/jquery/1.12.0/jquery.min.js';;
+    script.type = 'text/javascript';
+    script.onload = script.onreadystatechange = function() {
+      if (script.readyState) {
+        if (script.readyState === 'complete' || script.readyState === 'loaded') {
+          script.onreadystatechange = null;
+          onload(jQuery.noConflict(true));
+        }
+      }
+      else {
+        onload(jQuery.noConflict(true));
+      }
+    };
+    head.appendChild(script);
+  }else {
+    onload(jQuery);
+  }
+}
+
+reqJquery(function($){
+
+  window.wcp_data = {}
+  window.wcp_data.api_version = 1;
+  window.wcp_data.shop = "{{shop.permanent_domain}}";
+  
+	{% assign is_wcp_wholesale_customer = false %}
+	{% assign active_discounts = shop.metafields.wcp_active_discounts.wcp_active_discounts %}
+	{% assign active_discounts_array = active_discounts | split: ',' %}
+
+    {% assign customer_tags = blank %}
+    {% for tag in customer.tags %}
+      {% assign tempTag = tag | downcase %}
+      {% assign customer_tags = customer_tags | prepend:tempTag %}
+      {% unless forloop.last %}
+        {% assign customer_tags = customer_tags | prepend:','  %}
+      {% endunless %}
+    {% endfor %}
+    {% assign customer_tags = customer_tags | split:',' %}
+  
+	{% if shop.metafields.wcp_status.wcp_status != 'disabled' and customer %}
+      {% for discount_key in active_discounts_array %}
+          {% assign key_split = discount_key | split: '-' %}
+          {% assign key_split_length = key_split | size %}
+          {% if key_split_length > 2 %}      		
+              {% assign removeable_key = key_split.last | prepend: '-' %}
+              {% assign wcp_hide_sale_badge_customer_tag = discount_key | remove_last: removeable_key %}
+          {% else %}
+              {% assign wcp_hide_sale_badge_customer_tag = key_split[0] %}      
+          {% endif %}
+          {% assign wcp_hide_sale_badge_customer_tag = wcp_hide_sale_badge_customer_tag | downcase %}
+          {% if customer_tags contains wcp_hide_sale_badge_customer_tag %}
+              {% assign is_wcp_wholesale_customer = true %}     
+          {% endif %}
+      {% endfor %}
+	{% endif %}
+    {% if is_wcp_wholesale_customer == true %}  
+        $('body').on('click', ".wcp_checkout_btn,#dvPaypal, #dvAmazon, input[name='checkout'], button[name='checkout'], [href$='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], .additional-checkout-button, .google-wallet-button-holder, .amazon-payments-pay-button", function(ev){    
+            if(window.wpd_bypass_checkout != true) {
+                if(window.wcp_data.discounted_hash.discount_value || window.wcp_data.discounted_hash.shipping || window.wcp_data.discounted_hash.formatted_original_total != window.wcp_data.discounted_hash.formatted_wcp_total){
+                    if(window.wpd_prevent_checkout != undefined && window.wpd_prevent_checkout == true){return false;}
+                    ev.preventDefault();
+                    wcpolesaleCheckout();
+                }else{
+                    window.location = '/checkout';
+                }
+            }
+        });
+  {% else %}  
+        $('body').on('click', ".wcp_checkout_btn,#dvPaypal, #dvAmazon, input[name='checkout'], button[name='checkout'], [href$='checkout'], input[name='goto_pp'], button[name='goto_pp'], input[name='goto_gc'], button[name='goto_gc'], .additional-checkout-button, .google-wallet-button-holder, .amazon-payments-pay-button", function(ev){        
+            if(window.wpd_bypass_checkout != true) {
+                if(window.wcp_data.discounted_hash.discount_value || window.wcp_data.discounted_hash.shipping || window.wcp_data.discounted_hash.formatted_original_total != window.wcp_data.discounted_hash.formatted_wcp_total ){
+                    if(window.wpd_prevent_checkout != undefined && window.wpd_prevent_checkout == true){return false;}        
+                    if(window.wcp_data != undefined && window.wcp_data.hasOwnProperty("discounted_hash") && window.wcp_data.discounted_hash.show_discount_code == true && window.wcp_data.discounted_hash.ApplyDiscountCode == true){
+                        ev.preventDefault();
+                        wcpolesaleCheckout();
+                    }else{
+                        window.location = '/checkout';
+                    }          
+                }else{
+                    window.location = '/checkout';
+                }
+            } 
+        });  
+  {% endif %}
+
+   document.addEventListener('DOMContentLoaded', function(){
+     if(document.querySelector("#wpdNetMainContainer") != null){wpdNetVersion = 2;}
+   });
+  
+  function wcpolesaleCheckout(){
+    if(draftAPIRequestProcessing == true){return false;}
+    draftAPIRequestProcessing = true;
+    
+    window.wcp_data.action_type = 'checkout';
+    if ($("[name='note']").length) {
+      window.wcp_data.wcp_cart.note = $("[name='note']")[0].value
+    }
+    if ($("[name='cart[note]").length) {
+     window.wcp_data.wcp_cart.note = $("[name='cart[note]")[0].value
+    }
+
+    var invoiceUrlParams = [];
+    var noteAttributes   = [];
+
+    $("[name^='attributes']").each(function() {
+      var attribute = $(this);
+      var name = $(this).attr("name");
+      name = name.replace(/^attributes\[/i, "").replace(/\]$/i, "");
+      var v = {
+        name: name,
+        value: attribute.val()
+      };
+      if (v.value == "") {
+        return
+      }
+      switch (attribute[0].tagName.toLowerCase()) {
+        case "input":
+          if (attribute.attr("type") == "checkbox") {
+            if (attribute.is(":checked")) {
+              noteAttributes.push(v)
+            }
+          } else {
+            noteAttributes.push(v)
+          }
+          break;
+        default:
+          noteAttributes.push(v)
+      }
+    });
+
+    var orderNote = "";
+    if ($("[name='note']").length) {
+      orderNote = $("[name='note']")[0].value;
+    }
+
+    if ($("[name='cart[note]").length) {
+      orderNote = $("[name='cart[note]")[0].value;
+    }
+    window.wcp_data.wcp_cart.note_attributes = noteAttributes;
+    window.wcp_data.wcp_cart.note = orderNote;
+
+    if (orderNote.length){
+      invoiceUrlParams.push("note=" + encodeURIComponent(orderNote))
+    }
+
+    if (noteAttributes.length){      
+      noteAttributes.map(function(a) {
+        invoiceUrlParams.push("attributes" + encodeURIComponent("[" + a.name + "]") + "=" + encodeURIComponent(a.value))
+      })
+    }
+    
+    
+
+    if(window.wcp_data.discounted_hash.discount_value || window.wcp_data.discounted_hash.shipping || window.wcp_data.discounted_hash.formatted_original_total != window.wcp_data.discounted_hash.formatted_wcp_total){
+      if(typeof(window.wcp_data.discounted_hash.discount_value) == 'undefined'  || window.wcp_data.discounted_hash.discount_value== false){
+      	for (var i = 0; i < window.wcp_data.wcp_cart.items.length; i++) {
+    		  window.wcp_data.wcp_cart.items[i].wcp_v_price=window.wcp_data.wcp_cart.items[i].original_item.price;
+		    }
+      }
+      localStorage.setItem('wpd_integration_fbt_bundle','');
+      console.log(window.wcp_data);     
+      window.wcp_data.market_country = window.Shopify.country;
+      $.ajax({
+        contentType: "application/json; charset=utf-8", 
+        dataType: "json",
+        cache: false,
+        type: "POST",
+       	url: Wpd_domain +"order/draft", 
+        data: JSON.stringify(window.wcp_data),
+        success: function(res) {            
+          if(res.discount_method == 'code'){
+            res.invoice_url = '/checkout';
+            if (res.discount_code) {
+              invoiceUrlParams.push("discount=" + res.discount_code);
+            }
+            if (invoiceUrlParams.length) {
+              res.invoice_url += "?" + invoiceUrlParams.join("&")
+            }
+            wcpClearCart();
+            window.location.href = res.invoice_url;
+          } else {
+              res.order = res.order.body.draft_order; 
+            var orderRedirectUrl = res.order.invoice_url;
+            if(orderRedirectUrl){
+              if (invoiceUrlParams.length) {
+                orderRedirectUrl = orderRedirectUrl += "?" + invoiceUrlParams.join("&");                
+               if(window.is_wcp_custom_param != undefined &&  window.is_wcp_custom_param ==true){
+    				      orderRedirectUrl = orderRedirectUrl += "&" + window.wcp_cusome_invoiceUrlParams.join("&");
+    		        }
+                
+              }else{
+                  if(window.is_wcp_custom_param != undefined &&  window.is_wcp_custom_param ==true){
+    				        orderRedirectUrl = orderRedirectUrl += "?" + window.wcp_cusome_invoiceUrlParams.join("&");
+    		          }
+              }
+              if(window.wpd_checkout_redirect_delay==undefined || isNaN(window.wpd_checkout_redirect_delay)){
+                window.wpd_checkout_redirect_delay=500;
+              }else{
+                window.wpd_checkout_redirect_delay=window.wpd_checkout_redirect_delay < 500 ? 500 : window.wpd_checkout_redirect_delay;                
+              }
+              setTimeout(function(){
+                wcpClearCart();
+                checkInvoiceAvailability(orderRedirectUrl,1);                    
+              },window.wpd_checkout_redirect_delay);
+            } else {
+              wcpClearCart();
+              draftAPIRequestProcessing = false;
+              window.location.href = "/checkout";               
+            }
+          }       
+        },
+        error: function (jqXHR, exception) {
+          draftAPIRequestProcessing = false;
+          alert("Something went wrong while placing this order!");
+        }
+      });
+    } else {
+      draftAPIRequestProcessing = false;
+      window.location = '/checkout';
+    }
+
+  }
+
+  function checkInvoiceAvailability(url,tryCount) {    
+      fetch(url, {
+          method: "GET",
+          credentials: "same-origin",
+      }).then((response) => {
+          if(response.status != 200 && tryCount < 15){
+              setTimeout(function(){tryCount++; checkInvoiceAvailability(url,tryCount)},1000);
+          }else{
+              draftAPIRequestProcessing = false;
+              window.location.href = url;
+          }        
+      }).catch((error) => {
+        // to handle CORS error
+        setTimeout(function(){draftAPIRequestProcessing = false; window.location.href = url},5000);
+      });   
+  }
+
+  function sameDomainAjax (paramHash, successCallback) {
+    $.ajax({
+      data: JSON.stringify(paramHash),
+      url: Wpd_domain +"storefront/validate-cart",
+      contentType: "application/json; charset=utf-8",
+
+      cache: false,
+      datatype:'json',
+      type: 'POST',
+      success: function (data, success) {
+        successCallback(data);
+      }
+    });
+  }
+
+  window.wcpRefreshCartTotal = function(){
+    $('.wcp-discounts-wrapper').remove();
+    $('.wcp-discount-item').remove();
+    $('.wcp-minimums-note').html('');
+    $('.wcp-extra-note').html('');    
+     wcpCheckCart(window.wcp_data);
+  }
+
+  function wcpCheckCart(wcp_data){
+
+    var paramHash= {
+      shop:"{{shop.permanent_domain}}",
+        cart: wcp_data.wcp_cart,
+        customer: wcp_data.wcp_customer,
+        discount_code: wcp_data.discount_code};
+
+    sameDomainAjax(paramHash, function (data) {
+      $('.apply-wcp-discount, #wpdNetDiscountCodeBtn').attr('disabled',false);
+      $('.apply-wcp-discount, #wpdNetDiscountCodeBtn').removeClass('wpd-button-loading');
+       if(localStorage.getItem('wpd_integration_fbt_bundle')!=null && localStorage.getItem('wpd_integration_fbt_bundle')!='' ){
+    	    paramHash.FBT=JSON.parse(localStorage.getItem('wpd_integration_fbt_bundle'));
+       }        
+      
+      var TempNetOrderPrice=data.formatted_wcp_total;
+      var TempShippingCharge = 0;
+      
+      {% if shop.metafields.wcp_net.isNetShippingsCost == "true" or shop.metafields.wcp_net.isNetShippingsCost == '1' %}
+       if(data.hasOwnProperty('ShippingCharges') && data.ShippingCharges.hasOwnProperty('price')){
+         TempShippingCharge= data.ShippingCharges.price;
+         if(document.querySelector("#wpdShippingChargeWrapper") != null){
+           document.querySelector("#wpdNetShippingChargeValue").innerHTML = data.currency + data.ShippingCharges.price;                      
+           document.querySelector("#wpdShippingChargeWrapper").style.display = "flex";           
+         }else{
+           $(".wpd_net_shipping_amount").html(data.currency + data.ShippingCharges.price);
+           $(".wpd_net_shipping_msg").html(data.ShippingCharges.title);                
+         }         
+         TempNetOrderPrice=parseFloat(data.wcp_total)+parseFloat(data.ShippingCharges.price);
+         TempNetOrderPrice = TempNetOrderPrice.toFixed(2);
+         TempNetOrderPrice=data.currency + TempNetOrderPrice;
+        
+       }
+        if(wpdNetVersion == 2){
+          if (data.FlatMsgResponse != undefined && data.FlatMsgResponse != "" && data.minimumCartRequirement == true) {
+              document.getElementById("wpdNetShippingNote").innerHTML = data.FlatMsgResponse.replace("<br/>", "");
+              document.getElementById("wpdNetShippingNote").style.display = "block";
+          } else {
+              document.getElementById("wpdNetShippingNote").style.display = "none";
+          }
+        }
+        
+      {% endif %}    
+      
+      var CodeFlag=false;
+      window.wcp_data.discounted_hash = data;
+      if(wpdNetVersion == 2){
+        document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.remove("success","error");
+        document.getElementById("wpdApplyDiscountWrapper").style.display = "none";
+        $("#wpdNetCorrectDiscountCodeWrapper").css('opacity',"1");
+      }
+      
+      if (data.minimums_note != "") {
+          $(".wcp-minimums-note").html(data.minimums_note);
+        
+          if (data.FlatShippingRule == '1' || data.FlatShippingRule == 1) {
+            
+              $(".wcp-cart-total").html(data.formatted_wcp_total);
+              $(".wcp-net-cart-total").html(TempNetOrderPrice);              
+              $(".wcp-original-cart-total").css("text-decoration", "line-through");
+              $(".wcp-original-cart-total").html(data.formatted_original_total);
+
+              if (data.show_discount_code) {
+                  CodeFlag = true;
+                
+                  if ($('.wcp-discount-code').length == 0) {
+                      $(".wcp-cart-total").after("<span class='wcp-messages'><div class='wcp-discount-item' id='wcp-discount-item'></div><div id='wcp-summary-item'></div><div class='wcp-discounts-wrapper'><input type='text' class='wcp-discount-code' autocomplete='off' id='wcp-discount-code' placeholder='Discount Code'><button id='apply-wcp-discount' class='btn btn--secondary apply-wcp-discount'>{{shop.metafields.wcp_net.DCBtnApplyDiscount | default:'Apply Discount'}}</button></div></span>");
+                  }
+
+                  if (window.wcp_data.discount_code) {
+                      $('.wcp-discount-code').val(data.discount_code);
+                      $('.wcp-discount-item').html(data.discount_item_html);
+                      if(wpdNetVersion == 2){
+                        document.getElementById("wpdNetCorrectDiscountCodeText").innerHTML = data.discount_item_html;                      
+                        document.getElementById("wpdNetDiscountCodeTxt").value = data.discount_code;
+                      }
+                      if (data.ApplyDiscountCode) {   
+                          if(wpdNetVersion == 2){
+                            document.getElementById("wpdApplyDiscountWrapper").style.display = "flex";
+                            document.getElementById("wpdNetDiscountCodeValue").innerHTML = "-" + data.currency + data.discountCodeamount;                          
+                            document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("success");    
+                          }
+                        
+                          $('.wcp-discount-item').removeClass('DiscointCodeInvalid').addClass('DiscointCodeSuccess');
+                      } else {
+                          if(wpdNetVersion == 2){
+                            document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("error");
+                          }
+                          $('.wcp-discount-item').removeClass('DiscointCodeSuccess').addClass('DiscointCodeInvalid');
+                      }
+                  }
+              }
+          } else {
+              $(".wcp-cart-total").html('');
+              $(".wcp-net-cart-total").html('');
+            
+              if(TempShippingCharge!=0){
+         			TempNetOrderPrice=data.currency + (parseFloat(data.wcp_total)+parseFloat(data.ShippingCharges.price)).toFixed(2);                    
+       				$(".wcp-net-cart-total").html(TempNetOrderPrice);
+            		$(".wcp-net-original-cart-total").css("text-decoration", "line-through");                 
+              }
+            
+            $(".wcp-original-cart-total").css("text-decoration", "none"); 
+            
+              
+              
+          }
+          $(".wcp-original-cart-total").html(data.formatted_original_total);
+      } else {
+          $(".wcp-minimums-note").html('');
+      }
+      $("#wpdNetTotalValue").html(TempNetOrderPrice);
+      $("#wpdNetCrossOutTotalValue").html(data.formatted_original_total);
+      if (data.formatted_original_total != data.formatted_wcp_total && data.discount_value !== false) {
+          $(".wcp-original-cart-total").css("text-decoration", "line-through");
+          $(".wcp-original-cart-total").html(data.formatted_original_total);
+          $(".wcp-cart-total").html(data.formatted_wcp_total);
+        
+          $(".wcp-net-cart-total").html(TempNetOrderPrice);
+          if (data.show_discount_code) {
+              if (!CodeFlag) {
+                  CodeFlag = true;
+                  if ($('.wcp-discount-code').length == 0) {
+                      $(".wcp-cart-total").after("<span class='wcp-messages'><div class='wcp-discount-item' id='wcp-discount-item'></div><div id='wcp-summary-item'></div><div class='wcp-discounts-wrapper'><input type='text' autocomplete='off' class='wcp-discount-code' id='wcp-discount-code' placeholder='Discount Code'><button id='apply-wcp-discount' class='btn btn--secondary apply-wcp-discount'>{{shop.metafields.wcp_net.DCBtnApplyDiscount | default:'Apply Discount'}}</button></div></span>");
+                  }
+              }
+              if (window.wcp_data.discount_code) {
+                  $('.wcp-discount-code').val(data.discount_code);
+                  $('.wcp-discount-item').html(data.discount_item_html);
+                  if(wpdNetVersion == 2){
+                    document.getElementById("wpdNetCorrectDiscountCodeText").innerHTML = data.discount_item_html;                   
+                    document.getElementById("wpdNetDiscountCodeTxt").value = data.discount_code;
+                  }
+                  if (data.ApplyDiscountCode) {
+                      if(wpdNetVersion == 2){
+                        document.getElementById("wpdApplyDiscountWrapper").style.display = "flex";
+                        document.getElementById("wpdNetDiscountCodeValue").innerHTML = "-" + data.currency + data.discountCodeamount;
+                        document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("success"); 
+                      }
+                      $('.wcp-discount-item').removeClass('DiscointCodeInvalid').addClass('DiscointCodeSuccess');
+                  } else {
+                      if(wpdNetVersion == 2){
+                        document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("error");
+                      }                    
+                      $('.wcp-discount-item').removeClass('DiscointCodeSuccess').addClass('DiscointCodeInvalid');
+                  }
+              }
+          }
+      }else{        
+        if(data.formatted_original_total != data.formatted_wcp_total ){             
+             $(".wcp-net-cart-total").html(TempNetOrderPrice);          	 
+        } else{         
+          $(".wcp-cart-total").html('');
+          $(".wcp-net-cart-total").html('');
+          $(".wcp-net-original-cart-total").css("text-decoration", "none");         
+          $(".wcp-original-cart-total").css("text-decoration", "none");
+          if(TempShippingCharge!=0){
+         			TempNetOrderPrice=data.currency + (parseFloat(data.wcp_total)+parseFloat(data.ShippingCharges.price)).toFixed(2);
+       				$(".wcp-net-cart-total").html(TempNetOrderPrice);
+            		$(".wcp-net-original-cart-total").css("text-decoration", "line-through");
+              }
+        }      
+      }
+      if (data.extra_note) { $(".wcp-extra-note").html(data.extra_note); }      
+      if (data.show_discount_code && CodeFlag != true) {
+          if ($('.wcp-discount-code').length == 0) {
+              $(".wcp-cart-total").after("<span class='wcp-messages'><div class='wcp-discount-item' id='wcp-discount-item'></div><div id='wcp-summary-item'></div><div class='wcp-discounts-wrapper'><input type='text' autocomplete='off' class='wcp-discount-code' id='wcp-discount-code' placeholder='Discount Code'><button id='apply-wcp-discount' class='btn btn--secondary apply-wcp-discount'>{{shop.metafields.wcp_net.DCBtnApplyDiscount | default:'Apply Discount'}}</button></div></span>");
+          }
+          if (window.wcp_data.discount_code) {
+              $('.wcp-discount-code').val(data.discount_code);
+              $('.wcp-discount-item').html(data.discount_item_html);
+              if(wpdNetVersion == 2){
+                document.getElementById("wpdNetCorrectDiscountCodeText").innerHTML = data.discount_item_html;              
+                document.getElementById("wpdNetDiscountCodeTxt").value = data.discount_code;
+              }
+              if (data.ApplyDiscountCode) {
+                  if(wpdNetVersion == 2){     
+                    document.getElementById("wpdApplyDiscountWrapper").style.display = "flex";
+                    document.getElementById("wpdNetDiscountCodeValue").innerHTML = "-" + data.currency + data.discountCodeamount;
+                    document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("success");
+                  }
+                  $('.wcp-discount-item').removeClass('DiscointCodeInvalid').addClass('DiscointCodeSuccess');
+              } else {
+                  if(wpdNetVersion == 2){
+                    document.getElementById("wpdNetCorrectDiscountCodeWrapper").classList.add("error");
+                  }
+                  $('.wcp-discount-item').removeClass('DiscointCodeSuccess').addClass('DiscointCodeInvalid');
+              }
+          }else{
+            $('.wcp-discount-item').html('');
+            $('.wcp-discount-item').html('');
+          }
+      }
+      $("#wcp-wcpModal-container #net-30-summary").html(data.net_30_html);
+      window.net_30_data = data;
+    });
+  }
+
+    window.wcp_data.wcp_customer = {
+      email: "{{customer.email | escape}}",
+      id: {{customer.id}},
+      tags: {{ customer.tags|json }},
+      default_address: {{customer.default_address|json}}
+    }
+    function GetCartData(){
+      $.get('/search?view=wcp_cart',function(data){
+        data=JSON.parse(data);
+        window.wcp_data.wcp_cart= data;
+        window.wcp_data.wcp_cart.token=data.token.token;
+        wcpCheckCart(window.wcp_data);
+    });
+    }
+
+
+  var oldtext = $('.cart-drawer__subtotal-number').text();
+  var oldtextcart=$('.cart-footer__subtotal').text();
+var fnCalled = false;
+   $(".cart-drawer__item-quantity, .cart-item__qty-input").bind('keyup mouseup', function () {     
+       var v = setInterval(function(){
+     if(oldtext != $('.cart-drawer__subtotal-number').text() || oldtextcart != $('.cart-footer__subtotal').text()){
+         GetCartData();
+         oldtext = $('.cart-drawer__subtotal-number').text();
+         oldtextcart=$('.cart-footer__subtotal').text();
+
+        $('.cart-item__price-wrapper span[data-cart-item-price],.cart-drawer__item-price-container span[data-cart-item-price]').each(function( i ) {
+          $(this).html(window.wcp_data.discounted_hash.currency+""+(window.wcp_data.wcp_cart.items[i].wcp_v_price/100).toFixed(2));
+        });
+
+        $('.cart-item__price-wrapper s[data-cart-item-original-price],.cart-drawer__item-price-container s[data-cart-item-original-price]').each(function(i) {
+          var price_Original = (window.wcp_data.wcp_cart.items[i].price/100).toFixed(2);
+          var price_wcp = (window.wcp_data.wcp_cart.items[i].wcp_v_price/100).toFixed(2);
+          if(price_Original != price_wcp)
+          $(this).html(window.wcp_data.discounted_hash.currency+""+price_Original);
+        });
+
+         fnCalled = true;
+     }
+
+     if(fnCalled){
+       clearInterval(v);
+       fnCalled=false;
+     }
+   },500);
+
+    });
+
+        function isWPDTagValueAvailableInArray(active_tags,customer_tag ,value,individual_price_tag){      
+          if(active_tags.length==0){
+            return false;
+          }
+         
+          var isWPDFoundTag=false;
+          for(var j=0;j<active_tags.length;j++){
+            
+            if(individual_price_tag == ""){
+              
+              if(active_tags[j].customer_tag==customer_tag && active_tags[j].value==value && active_tags[j].is_individual_price=="false"){                               
+                isWPDFoundTag = true; break;
+                
+              } 
+            }else{            
+              if(active_tags[j].customer_tag==customer_tag && active_tags[j].value==value && active_tags[j].individual_price_tag== individual_price_tag){
+                isWPDFoundTag = true; break;
+              }
+            }
+          }
+          return isWPDFoundTag;
+        }  
+   
+    window.wcp_data.wcp_cart = {{cart | json}}
+    window.wcp_data.wcp_cart.items = [];
+    window.wcp_data.wcp_cart.active_tags = [] ;
+    window.wcp_data.wcp_cart.ApplyDiscountDetails = [];
+        
+      {% for item in cart.items %}
+      {% include 'wcp_discount' with item.product , wpd_discount_variant:item.variant %}
+      {% include 'wcp_variant' with item.variant %}
+  	  {% assign without_vd_Price = wcp_v_price %}
+   	  {% include 'wcp_vd_discount' with item %}
+        window.wcp_data.wcp_cart.active_tags.push("{{p_discount_tag}}")
+                                                  
+       {% unless p_discount_tag == blank  %}                                                        
+         if(!isWPDTagValueAvailableInArray(window.wcp_data.wcp_cart.ApplyDiscountDetails,"{{p_discount_tag}}","{{p_discount_value}}","{{v_discount_tag}}")){         
+         window.wcp_data.wcp_cart.ApplyDiscountDetails.push({
+            "value":"{% if v_discount_tag %}{{ wcp_v_price | divided_by: 100.0 }}{% else %}{{p_discount_value}}{% endif %}",
+            "customer_tag":"{% if v_discount_tag %}{{v_discount_tag}}{% else %}{{p_discount_tag}}{% endif %}",                
+            "is_individual_price":"{% if v_discount_tag %}true{% else %}false{% endif %}",                        
+         });       
+       }
+      {% endunless %}
+      {% if set_price or wcp_discount_value < 1 or p_discount_value == 0 %}		
+
+        {% if wcp_v_price > item.final_price %}
+           {% assign wcp_v_price = item.final_price %}
+        {% endif %}
+        {% if wcp_v_price > item.discounted_price %}
+           	{% assign wcp_v_price = item.discounted_price %}
+        {% endif %}
+
+         {% if without_vd_Price > item.final_price %}
+           {% assign without_vd_Price = item.final_price %}
+        {% endif %}
+        {% if without_vd_Price > item.discounted_price %}
+           	{% assign without_vd_Price = item.discounted_price %}
+        {% endif %}  
+        var CurrectCollectionIds=[];
+        var CollectionsIds={{item.product.collections | json}};
+  	    CollectionsIds.forEach(function(item){
+  		    CurrectCollectionIds.push(item.id)
+	      });
+    	window.wcp_data.wcp_cart.items.push({
+          original_item: {{item | json}},
+          variant_id: {{item.variant_id}},
+          product_id: {{item.product.id}},
+          quantity: {{item.quantity}},
+          wcp_v_compare_price: {% if wcp_v_compare_at_price == blank %} {{item.variant.price}} {% else %} {{wcp_v_compare_at_price}} {% endif %},
+          wcp_v_price: {{without_vd_Price }},
+          wcp_vd_price:{{wcp_v_price}},
+          price: {{item.variant.price}},
+          compare_at_price: {% if item.variant.compare_at_price == blank %} {{item.variant.price}} {% else %} {{item.variant.compare_at_price}} {% endif %},
+          wcp_discount: {{item.product.metafields.wcp_discount | json}},
+		      currenctProductCollection:CurrectCollectionIds
+        })
+      {% else %}
+         {% assign variant_price = item.variant.price %}
+        {% if item.variant.price > item.final_price %}
+           {% assign variant_price = item.final_price %}
+        {% endif %}
+        {% if item.variant.price > item.discounted_price %}
+           {% assign variant_price = item.discounted_price %}
+        {% endif %}
+        window.wcp_data.wcp_cart.items.push({
+          original_item: {{item | json}},
+          quantity: {{item.quantity}},
+          price: {{item.variant.price}},
+          compare_at_price: {% if item.variant.compare_at_price == blank %} {{item.variant.price}} {% else %} {{item.variant.compare_at_price}} {% endif %},
+          wcp_discount: {{item.product.metafields.wcp_discount | json}},
+          wcp_v_compare_price: {% if item.variant.compare_at_price == blank  or wcp_v_compare_at_price == 0 %} {{item.variant.price}} {% else %} {{item.variant.compare_at_price}} {% endif %},
+          wcp_v_price: {{without_vd_Price}},
+          wcp_vd_price:{{wcp_v_price}},
+          currenctProductCollection:[]
+
+        }) 
+     {% endif %}        
+        {% assign v_discount_tag = nil %}
+    {% endfor %}
+            
+    var wcpCookieCode = getCookie('wcp_discount_' + window.wcp_data.wcp_cart.token);
+    if(wcpCookieCode){
+      window.wcp_data.discount_code = wcpCookieCode;
+    }
+
+  wcpCheckCart(window.wcp_data);
+
+ function ensureStock(){
+      var arr = []
+      $("input[max]").each(function(){
+        var el = $(this);
+        var max = parseInt(el.attr('max'), 10) || 10000;
+        var value = parseInt(el.val(), 10) || 0;
+        if (value > max){
+          arr.push(el);
+          el.val(max);
+        }      
+      });
+
+      if(arr.length > 0){        
+//         $("form[action$='cart']").submit();
+      }
+   
+    }
+//     ensureStock();
+    $('body').on('change', "input[name='updates[]'], input[id^='updates_'], input[id^='Updates_']", function(e) {
+       if(window.wpd_bypass_quantity_reload != true) {
+          e.preventDefault();  
+          ensureStock();
+          setTimeout(function(){$("form[action$='cart']").submit();},500);   
+       }   
+    });
+    
+    $('[max]').change(function() {
+      var max = parseInt($(this).attr('max'), 10) || 10000;
+      var value = parseInt($(this).val(), 10) || 0;
+      if (value > max) { $(this).val(max); }
+    });
+
+   
+  function wcpClearCart(){
+     
+     {% if shop.metafields.wcp_net.isClearCart == "true" or shop.metafields.wcp_net.isClearCart == '1' %}
+      return false;
+     {% else %}
+          $.ajax({
+            type: "POST",
+            url: "/cart/clear.js",
+            dataType: "JSON",
+            success: function(data){
+            },
+            error: function(data) {}
+          });        
+     {% endif %}
+    }
+  
+  function wcpClearCartnet(){
+     
+     {% if shop.metafields.wcp_net.isClearCartnet == "true" or shop.metafields.wcp_net.isClearCartnet == '1' %}
+      return '';
+     {% else %}
+          $.ajax({
+            type: "POST",
+            url: "/cart/clear.js",
+            dataType: "JSON",
+            success: function(data){
+            },
+            error: function(data) {}
+          });        
+     {% endif %}
+    }
+  
+  function submitNet30(wcp_data){
+    
+    if(typeof(wcp_data.discounted_hash.discount_value) == 'undefined'  || wcp_data.discounted_hash.discount_value== false){
+      	for (var i = 0; i < window.wcp_data.wcp_cart.items.length; i++) { 
+    		wcp_data.wcp_cart.items[i].wcp_v_price=wcp_data.wcp_cart.items[i].original_item.price;
+		}
+      }
+	 localStorage.setItem('wpd_integration_fbt_bundle','');
+    //change button to loading or spinner
+    $.ajax({
+      contentType: "application/json; charset=utf-8",
+      
+      url: Wpd_domain +"order/net-draft",
+      cache: false,
+      dataType: 'json',
+      data: JSON.stringify(wcp_data),
+      type: 'POST',
+      success: function (data, success) {         
+        if(wpdNetVersion == 2){
+          $("#wpdNetOrderSuccessMsg").html($.parseHTML({{shop.metafields.wcp_net.netThankMsg | json}}));
+          $("#wpdNetOrderSuccessWrapper").css("display","flex");
+          $("#wpdNetContentWrapper, #wpdNetLeftContent, #wpdNetHeaderWrapper, #wpdNetMainForm").hide();          
+        }else{
+         $("#wcp-wcpModal-container").html($.parseHTML({{shop.metafields.wcp_net.netThankMsg | json}}));   
+        }
+        wcpClearCartnet();
+        //return false; 
+        if(window.wpd_net_waiting_time==undefined || isNaN(window.wpd_net_waiting_time)){
+         window.wpd_net_waiting_time=3000
+        };
+        setTimeout(function(){                               
+        	if(data.hasOwnProperty('NetRedirectUrl') ){
+         		if(data.NetRedirectUrl!='' && data.NetRedirectUrl!=null){
+                	window.location.href = data.NetRedirectUrl;
+             	}else{
+                	window.location = "/";
+             	}            
+          	}else{
+            	window.location = "/";
+          	}        
+      	}, window.wpd_net_waiting_time);
+           
+      }
+    });
+    
+    return false;
+  }
+  
+
+  $(function(){
+    var wcpQuery=$,wcpModals=[],getCurrent=function(){return wcpModals.length?wcpModals[wcpModals.length-1]:null},selectCurrent=function(){var a,b=!1;for(a=wcpModals.length-1;a>=0;a--)wcpModals[a].$blocker&&(wcpModals[a].$blocker.toggleClass("current",!b).toggleClass("behind",b),b=!0)};wcpQuery.wcpModal=function(a,b){var c,d;if(this.$body=wcpQuery("body"),this.options=wcpQuery.extend({},wcpQuery.wcpModal.defaults,b),this.options.doFade=!isNaN(parseInt(this.options.fadeDuration,10)),this.$blocker=null,this.options.closeExisting)for(;wcpQuery.wcpModal.isActive();)wcpQuery.wcpModal.close();if(wcpModals.push(this),a.is("a"))if(d=a.attr("href"),/^#/.test(d)){if(this.$elm=wcpQuery(d),1!==this.$elm.length)return null;this.$body.append(this.$elm),this.open()}else this.$elm=wcpQuery("<div>"),this.$body.append(this.$elm),c=function(a,b){b.elm.remove()},this.showSpinner(),a.trigger(wcpQuery.wcpModal.AJAX_SEND),wcpQuery.get(d).done(function(b){if(wcpQuery.wcpModal.isActive()){a.trigger(wcpQuery.wcpModal.AJAX_SUCCESS);var d=getCurrent();d.$elm.empty().append(b).on(wcpQuery.wcpModal.CLOSE,c),d.hideSpinner(),d.open(),a.trigger(wcpQuery.wcpModal.AJAX_COMPLETE)}}).fail(function(){a.trigger(wcpQuery.wcpModal.AJAX_FAIL);var b=getCurrent();b.hideSpinner(),wcpModals.pop(),a.trigger(wcpQuery.wcpModal.AJAX_COMPLETE)});else this.$elm=a,this.$body.append(this.$elm),this.open()},wcpQuery.wcpModal.prototype={constructor:wcpQuery.wcpModal,open:function(){var a=this;this.block(),this.options.doFade?setTimeout(function(){a.show()},this.options.fadeDuration*this.options.fadeDelay):this.show(),wcpQuery(document).off("keydown.wcpModal").on("keydown.wcpModal",function(a){var b=getCurrent();27==a.which&&b.options.escapeClose&&b.close()}),this.options.clickClose&&this.$blocker.click(function(a){a.target==this&&wcpQuery.wcpModal.close()})},close:function(){wcpModals.pop(),this.unblock(),this.hide(),wcpQuery.wcpModal.isActive()||wcpQuery(document).off("keydown.wcpModal")},block:function(){this.$elm.trigger(wcpQuery.wcpModal.BEFORE_BLOCK,[this._ctx()]),this.$body.css("overflow","hidden"),this.$blocker=wcpQuery('<div class="jquery-wcpModal blocker current"></div>').appendTo(this.$body),selectCurrent(),this.options.doFade&&this.$blocker.css("opacity",0).animate({opacity:1},this.options.fadeDuration),this.$elm.trigger(wcpQuery.wcpModal.BLOCK,[this._ctx()])},unblock:function(a){!a&&this.options.doFade?this.$blocker.fadeOut(this.options.fadeDuration,this.unblock.bind(this,!0)):(this.$blocker.children().appendTo(this.$body),this.$blocker.remove(),this.$blocker=null,selectCurrent(),wcpQuery.wcpModal.isActive()||this.$body.css("overflow",""))},show:function(){this.$elm.trigger(wcpQuery.wcpModal.BEFORE_OPEN,[this._ctx()]),this.options.showClose&&(this.closeButton=wcpQuery('<a href="#close-wcpModal" rel="wcpModal:close" class="close-wcpModal '+this.options.closeClass+'">'+this.options.closeText+"</a>"),this.$elm.append(this.closeButton)),this.$elm.addClass(this.options.wcpModalClass).appendTo(this.$blocker),this.options.doFade?this.$elm.css("opacity",0).show().animate({opacity:1},this.options.fadeDuration):this.$elm.show(),this.$elm.trigger(wcpQuery.wcpModal.OPEN,[this._ctx()])},hide:function(){this.$elm.trigger(wcpQuery.wcpModal.BEFORE_CLOSE,[this._ctx()]),this.closeButton&&this.closeButton.remove();var a=this;this.options.doFade?this.$elm.fadeOut(this.options.fadeDuration,function(){a.$elm.trigger(wcpQuery.wcpModal.AFTER_CLOSE,[a._ctx()])}):this.$elm.hide(0,function(){a.$elm.trigger(wcpQuery.wcpModal.AFTER_CLOSE,[a._ctx()])}),this.$elm.trigger(wcpQuery.wcpModal.CLOSE,[this._ctx()])},showSpinner:function(){this.options.showSpinner&&(this.spinner=this.spinner||wcpQuery('<div class="'+this.options.wcpModalClass+'-spinner"></div>').append(this.options.spinnerHtml),this.$body.append(this.spinner),this.spinner.show())},hideSpinner:function(){this.spinner&&this.spinner.remove()},_ctx:function(){return{elm:this.$elm,$blocker:this.$blocker,options:this.options}}},wcpQuery.wcpModal.close=function(a){if(wcpQuery.wcpModal.isActive()){a&&a.preventDefault();var b=getCurrent();return b.close(),b.$elm}},wcpQuery.wcpModal.isActive=function(){return wcpModals.length>0},wcpQuery.wcpModal.defaults={closeExisting:!0,escapeClose:!0,clickClose:!0,closeText:"Close",closeClass:"",wcpModalClass:"wcp-checkout-wcpModal",spinnerHtml:null,showSpinner:!0,showClose:!0,fadeDuration:null,fadeDelay:1},wcpQuery.wcpModal.BEFORE_BLOCK="wcpModal:before-block",wcpQuery.wcpModal.BLOCK="wcpModal:block",wcpQuery.wcpModal.BEFORE_OPEN="wcpModal:before-open",wcpQuery.wcpModal.OPEN="wcpModal:open",wcpQuery.wcpModal.BEFORE_CLOSE="wcpModal:before-close",wcpQuery.wcpModal.CLOSE="wcpModal:close",wcpQuery.wcpModal.AFTER_CLOSE="wcpModal:after-close",wcpQuery.wcpModal.AJAX_SEND="wcpModal:ajax:send",wcpQuery.wcpModal.AJAX_SUCCESS="wcpModal:ajax:success",wcpQuery.wcpModal.AJAX_FAIL="wcpModal:ajax:fail",wcpQuery.wcpModal.AJAX_COMPLETE="wcpModal:ajax:complete",wcpQuery.fn.wcpModal=function(a){return 1===this.length&&new wcpQuery.wcpModal(this,a),this},wcpQuery(document).on("click.wcpModal",'a[rel="wcpModal:close"]',wcpQuery.wcpModal.close),wcpQuery(document).on("click.wcpModal",'a[rel="wcpModal:open"]',function(a){a.preventDefault(),wcpQuery(this).wcpModal()});
+	var ExtraFields='';
+    $('body').on('click', "#wpdNetRemoveDiscountCode", function(e) {
+      $("#wpdNetCorrectDiscountCodeWrapper").css('opacity',"0.5");  
+      e.preventDefault();
+      setCookie('wcp_discount_' + window.wcp_data.wcp_cart.token,"")              
+      window.wcp_data.discount_code = '';      
+  	  wcpCheckCart(window.wcp_data);
+      
+    });
+
+    $('body').on('click', "button#apply-wcp-discount, #wpdNetDiscountCodeBtn", function(e) {
+      $(this).attr('disabled',true);  
+      $(this).addClass('wpd-button-loading');
+      e.preventDefault();
+      setCookie('wcp_discount_' + window.wcp_data.wcp_cart.token, $(this).prev().val().trim())              
+      var wcpCookieCode = getCookie('wcp_discount_' + window.wcp_data.wcp_cart.token);
+      
+      
+     if(wcpCookieCode){
+       window.wcp_data.discount_code = wcpCookieCode;
+     }
+      if(wcpCookieCode==""){
+       window.wcp_data.discount_code = '';
+      }
+  	 wcpCheckCart(window.wcp_data);
+      
+    });
+    
+    $('body').on('click', '#wcp-30-open', function(){            
+      if(document.querySelector("#wpdNetMainContainer") != null){
+        document.querySelector("#wpdNetOverlay").style.display = "block";
+        document.querySelector("#wpdNetMainContainer").style.display = "block";
+        document.body.style.overflow = "hidden";
+      }else{
+        $('#wcp-wcpModal-container').wcpModal();
+        $('#wcp-wcpModal-container').css('display','inline-block');  
+      }      
+      var wcpNoteValue = '';
+      if($("[name='note']").length){
+     	  wcpNoteValue= $("[name='note']")[0].value;
+      }
+      $("textarea.net-notes").val(wcpNoteValue);
+      return false;
+    });
+
+    $('body').on('click', '.close-wcpModal', function(){
+      $.wcpModal.close()
+    });
+
+    $('body').on('click', '#wpdNetOverlay, #wpdCloseNetPopup', function(){
+        document.querySelector("#wpdNetOverlay").style.display = "none";
+        document.querySelector("#wpdNetMainContainer").style.display = "none";
+        document.body.style.overflow = "auto";
+    });
+ 
+    $('body').on('submit', 'form#net-order-form, form#wpdNetMainForm', function(e){ 
+      e.preventDefault();
+      if(window.wcp_net_border_color==undefined){
+      {% if shop.metafields.wcp_net.isDisplayBillingEmail == 'true'  or shop.metafields.wcp_net.isDisplayBillingEmail == '1'%}
+          if(wpdNetVersion == 2){
+            window.wcp_net_border_color=document.getElementById("wpdNetBillingEmail").style.borderColor;  
+          }else{
+            window.wcp_net_border_color=document.getElementById("wcpbillingEmail").style.borderColor;  
+          }
+      {% endif %}
+       {% if shop.metafields.wcp_net.isdisplayDate == 'true' or  shop.metafields.wcp_net.isdisplayDate == '1' %}
+           if(wpdNetVersion == 2){
+             window.wcp_net_border_color=document.getElementById("wpdNetDeliveryDate").style.borderColor;
+           }else{
+             window.wcp_net_border_color=document.getElementById("datepicker").style.borderColor;  
+           }
+      {% endif %}
+      {% if shop.metafields.wcp_net.isPayment == 'true' or  shop.metafields.wcp_net.isPayment == '1' %}
+      {% if shop.metafields.wcp_net.Payment !='' %}
+        if(wpdNetVersion == 2){
+          window.wcp_net_border_color=document.getElementById("wpdNetPayment").style.borderColor;   
+        }else{
+          window.wcp_net_border_color=document.getElementById("payment").style.borderColor;   
+        }
+      {% endif %}
+      {% endif %}     
+      }
+      
+      {% if shop.metafields.wcp_net.isDisplayBillingEmail == 'true'  or shop.metafields.wcp_net.isDisplayBillingEmail == '1'%}
+          if(wpdNetVersion == 2){
+             document.getElementById("wpdNetBillingEmail").style.borderColor = window.wcp_net_border_color;  
+          }else{
+            document.getElementById("wcpbillingEmail").style.borderColor = window.wcp_net_border_color;
+          }
+      {% endif %}
+       {% if shop.metafields.wcp_net.isdisplayDate == 'true' or  shop.metafields.wcp_net.isdisplayDate == '1' %}
+          if(wpdNetVersion == 2){
+             document.getElementById("wpdNetDeliveryDate").style.borderColor = window.wcp_net_border_color;
+          }else{
+            document.getElementById("datepicker").style.borderColor = window.wcp_net_border_color;
+          }
+      {% endif %}
+      {% if shop.metafields.wcp_net.isPayment == 'true' or  shop.metafields.wcp_net.isPayment == '1' %}
+      {% if shop.metafields.wcp_net.Payment !='' %}
+       if(wpdNetVersion == 2){
+        document.getElementById("wpdNetPayment").style.borderColor = window.wcp_net_border_color;
+       }else{
+         document.getElementById("payment").style.borderColor = window.wcp_net_border_color;
+       }
+      {% endif %}
+      {% endif %}
+     
+     
+      
+      var note='';
+      var note_data={};
+      if($(".net-notes").val() !=''){
+        note="\\r\\n\\r\\n Notes: "+ $(".net-notes").val();
+        note_data['Notes']=$('.net-notes').val();
+      }
+      var wcp_required=false;
+      
+      
+      {% if shop.metafields.wcp_net.isDisplayBillingEmail == 'true'  or shop.metafields.wcp_net.isDisplayBillingEmail == '1'%}
+        let wcpbillingEmail = $('.wcpbillingEmail');
+        if(wpdNetVersion == 2){
+            wcpbillingEmail = $('#wpdNetBillingEmail');
+        }
+        if(wcpbillingEmail.val()!=''){          
+   			if (!/^\w+[^@]+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,10})+$/.test(wcpbillingEmail.val().trim()))
+  			{
+                wcpbillingEmail.css("border-color","red");
+                wcpbillingEmail.focus();
+                alert("You have entered an invalid email address!");
+    			return false;
+               
+    	    }
+          if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('Billing_Email')){
+            note=note+ '\\r\\n\\r\\n Billing Email:  '+wcpbillingEmail.val();
+            note_data['Billing_Email']=wcpbillingEmail.val();
+          }
+        }else{
+          wcpbillingEmail.focus();
+          wcp_required=true;      
+          wcpbillingEmail.css("border-color","red");
+        }
+      {% endif %}
+ 
+      
+      
+      {% if shop.metafields.wcp_net.isdisplayDate == 'true' or  shop.metafields.wcp_net.isdisplayDate == '1' %}
+       let datepicker = $('#datepicker');
+       if(wpdNetVersion == 2){
+          datepicker = $('#wpdNetDeliveryDate');
+       }
+       if(datepicker.val()==''){
+          datepicker.focus();
+          datepicker.css("border-color","red");
+      	  wcp_required=true;        
+      }else{
+        if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('delivery_date')){
+           note=note +'\\r\\n\\r\\n Delivery Date: '+datepicker.val();
+           note_data['delivery_date']=datepicker.val();
+        }
+      }
+      {% endif %}
+      {% if shop.metafields.wcp_net.isPayment == 'true' or  shop.metafields.wcp_net.isPayment == '1' %}
+      {% if shop.metafields.wcp_net.Payment !='' %}
+       let payment = $('#payment');
+       if(wpdNetVersion == 2){
+          payment = $('#wpdNetPayment');
+       }
+       if(payment.val()=='-1'){
+         payment.focus();
+         wcp_required=true;    
+         payment.css("border-color","red");
+      }else{        
+        if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('Payment_Option')){
+          note=note +'\\r\\n\\r\\n Payment Option: '+payment.val();
+          note_data['Payment_Option']=payment.val();
+        }
+      }
+      {% endif %}
+      {% endif %}
+      
+      {% if shop.metafields.wcp_net.isdisplayPONo == 'true' or  shop.metafields.wcp_net.isdisplayPONo == '1' %}
+        let wcpPONo = $('.wcpPONo');
+        if(wpdNetVersion == 2){
+           wcpPONo = $('#wpdNetPoNumber');
+        }
+        if(wcpPONo.val()!=''){
+          if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('Purchase_Order_Number')){
+           note=note+ '\\r\\n\\r\\n Purchase Order Number: '+wcpPONo.val();
+           note_data['Purchase_Order_Number']=wcpPONo.val();
+          }
+        }
+      {% endif %}
+
+      {% if shop.metafields.wcp_net.isdisplayUPSNo == 'true' or  shop.metafields.wcp_net.isdisplayUPSNo == '1' %}
+        let wcpUPSNo = $('.wcpUPSNo');
+        if(wpdNetVersion == 2){
+           wcpUPSNo = $('#wpdNetUpsNumber');
+        }
+        if(wcpUPSNo.val()!=''){
+         if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('UPS_Shipping_Account_Number')){
+          note=note+ '\\r\\n\\r\\n UPS Shipping Account Number: '+wcpUPSNo.val();
+          note_data['UPS_Shipping_Account_Number']=wcpUPSNo.val();
+         }
+        }
+      {% endif %}
+
+      {% if shop.metafields.wcp_net.isdisplayShippingInst == 'true' or  shop.metafields.wcp_net.isdisplayShippingInst == '1' %}
+        let wcpShippingInst = $('.wcpShippingInst');
+        if(wpdNetVersion == 2){
+           wcpShippingInst = $('#wpdNetShippingInstructions');
+        }
+        if(wcpShippingInst.val()!=''){
+         if(window.wpdNetremoveAttributes == undefined || !window.wpdNetremoveAttributes.includes('Shipping_Instructions')){
+          note=note+ '\\r\\n\\r\\n Shipping Instructions:  '+wcpShippingInst.val();
+          note_data['Shipping_Instructions']=wcpShippingInst.val();
+         }
+        }
+      {% endif %}
+      
+      
+      if(wcp_required){
+      	alert('Please enter a value for all required fields.');
+        return false;
+      }
+      
+      note=note+ExtraFields;
+      if(window.wpdNetExtraFields != undefined){
+          note = note+window.wpdNetExtraFields;
+          note_data['Extra_Fields']=window.wpdNetExtraFields;
+      }
+      window.wcp_data.wcp_cart.note=note;      
+      window.wcp_data.note_data=note_data; 
+      
+      let noteAttributes = [];
+      $("[name^='attributes']").each(function() {
+        var attribute = $(this);
+        var name = $(this).attr("name");
+        name = name.replace(/^attributes\[/i, "").replace(/\]$/i, "");
+        var v = {
+          name: name,
+          value: attribute.val()
+        };
+        if (v.value == "") {
+          return
+        }
+        switch (attribute[0].tagName.toLowerCase()) {
+          case "input":
+            if (attribute.attr("type") == "checkbox") {
+              if (attribute.is(":checked")) {
+                noteAttributes.push(v)
+              }
+            } else {
+              noteAttributes.push(v)
+            }
+            break;
+          default:
+            noteAttributes.push(v)
+        }
+      });
+      window.wcp_data.wcp_cart.note_attributes = noteAttributes;
+      
+      var address = {};
+      if(wpdNetVersion == 2){
+        address.first_name = $("input[name='wpdNetShippingAddress[first_name]']").val();
+        address.last_name = $("input[name='wpdNetShippingAddress[last_name]']").val();
+        address.company = $("input[name='wpdNetShippingAddress[company]']").val();
+        address.address1 = $("input[name='wpdNetShippingAddress[address1]']").val();
+        address.address2 = $("input[name='wpdNetShippingAddress[address2]']").val();
+        address.city  = $("input[name='wpdNetShippingAddress[city]']").val();
+        address.province  = $("select[name='wpdNetShippingAddress[province]']").val();
+        address.country  = $("select[name='wpdNetShippingAddress[country]']").val();
+        address.zip  = $("input[name='wpdNetShippingAddress[zip]']").val();
+        address.phone  = $("input[name='wpdNetShippingAddress[phone]']").val();  
+      
+        var Billingaddress = {};
+        Billingaddress.first_name = $("input[name='wpdNetBillingAddress[first_name]']").val();
+        Billingaddress.last_name = $("input[name='wpdNetBillingAddress[last_name]']").val();
+        Billingaddress.company = $("input[name='wpdNetBillingAddress[company]']").val();
+        Billingaddress.address1 = $("input[name='wpdNetBillingAddress[address1]']").val();
+        Billingaddress.address2 = $("input[name='wpdNetBillingAddress[address2]']").val();
+        Billingaddress.city  = $("input[name='wpdNetBillingAddress[city]']").val();
+        Billingaddress.province  = $("select[name='wpdNetBillingAddress[province]']").val();
+        Billingaddress.country  = $("select[name='wpdNetBillingAddress[country]']").val();
+        Billingaddress.zip  = $("input[name='wpdNetBillingAddress[zip]']").val();
+        Billingaddress.phone  = $("input[name='wpdNetBillingAddress[phone]']").val();  
+        window.wcp_data.isBillingSameAsShipping = document.getElementById('wpdSameBillingAddress').checked;         
+        $("#wpdNetPlaceOrder").addClass("wpd-button-loading");
+        $("#wpdNetPlaceOrder").prop("disabled", true);        
+        
+      }else{
+        address.first_name = $("input[name='wcpaddress[first_name]']").val();
+        address.last_name = $("input[name='wcpaddress[last_name]']").val();
+        address.company = $("input[name='wcpaddress[company]']").val();
+        address.address1 = $("input[name='wcpaddress[address1]']").val();
+        address.address2 = $("input[name='wcpaddress[address2]']").val();
+        address.city  = $("input[name='wcpaddress[city]']").val();
+        address.province  = $("select[name='wcpaddress[province]']").val();
+        address.country  = $("select[name='wcpaddress[country]']").val();
+        address.zip  = $("input[name='wcpaddress[zip]']").val();
+        address.phone  = $("input[name='wcpaddress[phone]']").val();  
+        
+        var Billingaddress = {};
+        Billingaddress.first_name = $("input[name='wcpbillingaddress[first_name]']").val();
+        Billingaddress.last_name = $("input[name='wcpbillingaddress[last_name]']").val();
+        Billingaddress.company = $("input[name='wcpbillingaddress[company]']").val();
+        Billingaddress.address1 = $("input[name='wcpbillingaddress[address1]']").val();
+        Billingaddress.address2 = $("input[name='wcpbillingaddress[address2]']").val();
+        Billingaddress.city  = $("input[name='wcpbillingaddress[city]']").val();
+        Billingaddress.province  = $("select[name='wcpbillingaddress[province]']").val();
+        Billingaddress.country  = $("select[name='wcpbillingaddress[country]']").val();
+        Billingaddress.zip  = $("input[name='wcpbillingaddress[zip]']").val();
+        Billingaddress.phone  = $("input[name='wcpbillingaddress[phone]']").val();  
+      window.wcp_data.isBillingSameAsShipping = document.getElementById('billingsameasshipping').checked;      
+      window.wcp_data.isBillingSameAsShipping = document.getElementById('billingsameasshipping').checked;      
+      
+      window.wcp_data.net_30 = 1;
+      window.wcp_data.action_type = 'checkout';
+      
+        window.wcp_data.isBillingSameAsShipping = document.getElementById('billingsameasshipping').checked;      
+      
+      window.wcp_data.net_30 = 1;
+      window.wcp_data.action_type = 'checkout';
+      
+        $("#net-order-form :input").prop("disabled", true);
+        $("#net-order-form :button").prop("disabled", true);
+              
+        $("#net-order-form-billing :input").prop("disabled", true);
+        $("#net-order-form-billing :button").prop("disabled", true);      
+        $("#wpd-net-place-order").prop("disabled", true);
+        $("#wpd-net-place-order").addClass("wpd-button-loading");
+      }
+      
+      window.wcp_data.address = address;      
+      window.wcp_data.Billingaddress = Billingaddress;  
+      window.wcp_data.net_30 = 1;
+      window.wcp_data.action_type = 'checkout';
+      window.wcp_data.market_country = window.Shopify.country;
+      
+      
+     setTimeout(function(){
+       submitNet30(window.wcp_data); 
+      }, 1000);       
+
+      return false;
+    });
+  });
+
+
+});
+
+}(window, document));
+</script>
+
+<style>
+  .wcp-cart-total,.wcp-original-cart-total{
+      padding: 0px 15px;
+  }
+  
+  .wcp-minimums-note{
+  font-weight: bold;
+    color: maroon;
+  }
+  </style>
+{% include 'wcp_net'%}
+{% endif %}

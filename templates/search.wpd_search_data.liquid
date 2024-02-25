@@ -1,0 +1,75 @@
+{% layout none %}
+{% assign productLimit = 8 %}
+{% capture wpd_product_check %}{% include 'wpd_product_limit' %}{% endcapture %}
+
+{% paginate search.results by productLimit  %}
+{% assign CountTotal = search.results_count %}
+
+{% capture output %}
+{
+	"totalProductCount" : "{{CountTotal}}",	
+	"currentPageNumber": "{{paginate.current_page}}",
+	"totalPages": "{{paginate.pages}}",
+    "productItems":
+        [
+            {% for item in search.results %}
+				
+                {% capture wlm_check %}{% include 'wlm-search' with item %}{% endcapture %}
+               	{% unless wlm_check contains "Liquid error" %}
+                {% include 'wlm-search' with item %}
+                {% endunless %}                
+                {% assign WPDVdTable = '' %}
+				{% assign productMinPrice = item.price_min | money_with_currency %}
+				{% assign productMaxPrice = item.price_max | money_with_currency %}
+				{% assign productDefaultVariantPrice = item.selected_or_first_available_variant.price | money_with_currency %}
+				{% assign productDefaultVariantCompareAtPrice = item.selected_or_first_available_variant.compare_at_price | money_with_currency %}
+				{% assign productDefaultVariantRawPrice = item.selected_or_first_available_variant.price %}
+				{% assign productDefaultVariantCompareAtRawPrice = item.selected_or_first_available_variant.compare_at_price %}
+
+				{% capture wpd_check %}{% include 'wcp_discount' with item %}{% endcapture %}
+              	{% unless wpd_check contains "Liquid error" %}
+
+                	{% include 'wcp_variant' with item.selected_or_first_available_variant %}
+                	{% include 'wcp_vd_product' with item %}
+					{% include 'wcp_variant' with item.selected_or_first_available_variant %}
+                  
+					{% assign WPDVdTable = wcp_vd_HTML_table %}
+					{% assign productMinPrice = wcp_price_min | money_with_currency %}
+					{% assign productMaxPrice = wcp_price_max | money_with_currency %}
+					{% assign productDefaultVariantPrice = wcp_v_price | money_with_currency %}
+					{% assign productDefaultVariantCompareAtPrice = wcp_v_compare_at_price | money_with_currency %}
+					{% assign productDefaultVariantRawPrice = wcp_v_price %}
+					{% assign productDefaultVariantCompareAtRawPrice = wcp_v_compare_at_price %}
+
+                {% endunless %}          
+
+                {% assign productImage = item.featured_media | product_img_url: 'medium' %}
+
+                {
+                    "WPDVdTable":{{ WPDVdTable | json }}
+					,"productId": "{{item.id}}"
+					,"productHandle": {{item.handle | json }}
+                    ,"productTitle":{{ item.title | json }}
+                    ,"productMinPrice":{{ productMinPrice | json }}
+                    ,"productMaxPrice":{{ productMaxPrice | json }}
+                    ,"productImage" : {{ productImage | json }}		
+					,"productVariantCount": "{{ item.variants | size }}"
+					,"productDefaultVariantId" : "{{ item.selected_or_first_available_variant.id}}"
+					,"productDefaultVariantPrice":{{productDefaultVariantPrice | json}}
+					,"productDefaultVariantCompareAtPrice":{{productDefaultVariantCompareAtPrice | json}}
+					,"productDefaultVariantRawPrice": "{{productDefaultVariantRawPrice}}"
+					,"productDefaultVariantCompareAtRawPrice": "{{productDefaultVariantCompareAtRawPrice}}"
+					,"productDefaultVariantAvailable" : "{{ item.selected_or_first_available_variant.available}}"
+                    ,"productDefaultVariantSku" : {{ item.selected_or_first_available_variant.sku | json}}
+					,"productDefaultVariantInventory" : "{{ item.selected_or_first_available_variant.inventory_quantity }}"
+                    ,"productDefaultVariantInventoryManagement" : "{{ item.selected_or_first_available_variant.inventory_management }}"
+                    ,"productDefaultVariantInventoryPolicy" : "{{ item.selected_or_first_available_variant.inventory_policy }}"
+                },         
+               
+            {% endfor %}
+{}
+        ]
+}
+{% endcapture %}
+{% endpaginate %}
+{{ output | strip_newlines }}
