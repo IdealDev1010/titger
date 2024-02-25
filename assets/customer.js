@@ -101,3 +101,15 @@ document.querySelector(".login-btn").addEventListener("click", function(e) {
   document.querySelector(".login-btn").classList.add("active-tab");
   document.querySelector(".register-btn").classList.remove("active-tab");
 });
+
+document.querySelector(".login-header__close__icon").addEventListener("click", function(e) {
+  e.preventDefault ();
+  document.querySelector(".product-account").style.display = 'none';
+});
+
+// document.querySelector(".product-account-button").addEventListener("click", function(e) {
+//   e.preventDefault();
+//   document.querySelector(".product-account").style.display = 'block';
+
+// });
+
