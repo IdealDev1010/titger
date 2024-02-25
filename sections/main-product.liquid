@@ -37,6 +37,7 @@
   {%- if product.quantity_price_breaks_configured? -%}
     <script src="{{ 'show-more.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'price-per-item.js' | asset_url }}" defer="defer"></script>
+    <script src="{{'customer.js' | asset_url }}" defer="defer"></script>
   {%- endif -%}
 
   {% if section.settings.image_zoom == 'hover' %}
@@ -644,7 +645,14 @@
             {% render 'icon-arrow' %}
           </a>
         </product-info>
+        <div class="product-account_btn">
+          <a class="product-account-button" href="https://titger.myshopify.com/apps/wpdapp/wholesale">
+            loggin for advantage pricing 
+          </a>
+        </div>
       </div>
+      
+      
       {%- if section.settings.media_position == 'right' -%}
         {% comment %} Duplicate gallery to display after product content on tablet/desktop breakpoint {% endcomment %}
         <div class="grid__item product__media-wrapper small-hide">

@@ -23,7 +23,7 @@
                     <a class="register-btn" href="{{ routes.account_register_url }}">
                     Create an account
                     </a>
-                    <a class="login-btn" href="{{ routes.account_url }}">
+                    <a class="login-btn active-tab" href="{{ routes.account_url }}">
                         Login to account
                     </a>
             </div>
@@ -123,10 +123,10 @@
                         {% if form.errors contains 'form' %}
                             aria-invalid="true"
                         {% endif %}
-                        placeholder="{{ 'customer.login_page.email' | t }}"
+                        placeholder="Email Address"
                         >
                         <label for="CustomerEmail">
-                        {{ 'customer.login_page.email' | t }}
+                        Email Address
                         </label>
                     </div>
                     {%- if form.password_needed -%}
@@ -144,6 +144,9 @@
                             {% endif %}
                             placeholder="{{ 'customer.login_page.password' | t }}"
                         >
+                            <label for="CustomerEmail">
+                                Password
+                                </label>
                         </div>
                     {%- endif -%}
                     <button>

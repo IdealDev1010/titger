@@ -8,6 +8,7 @@
     width: 100%;
     z-index: 9999;
     background: rgba(0, 0, 0, 0.5);
+    display: none;
 }
 
 .customer {
@@ -96,4 +97,42 @@
 
 .product-account__register {
     display: none;
+}
+
+.field__input, .customer .field input {
+    background: #F3F3F3;
+    border: 1px solid #ECECEE;
+    border-radius: 3px;
+}
+
+.product-account-button {
+    border: 1px solid #9faec1;
+    background-color: #9faec1;
+    box-shadow: 0px 3px 3px rgba(0,0,0,0.1);
+    width: 100%;
+    border-radius: 5px;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 16px;
+    color: #fff;
+    padding: 13px;
+    transition: 0.25s linear;
+    text-transform: uppercase;
+    box-shadow: 0px 1px 3px rgba(0,0,0,0.1);
+    color: #637895;
+    cursor: pointer;
+}
+
+.product-account_btn {
+    border: 1px solid #ccced0;
+    background-color: #ccced0;
+    border-radius: 5px 5px 0px 0px;
+    width: 100%;
+    margin: 0px 0px 0px;
+    padding: 13px;
+    max-width: 290px;
+}
+
+.product-account  .field {
+    margin-bottom: 30px;
 }
